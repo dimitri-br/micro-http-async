@@ -3,6 +3,9 @@ use tokio::io; // :D
 
 use async_trait::async_trait;
 
+use crate::Connection;
+use crate::Routes;
+use crate::Request;
 
 /// # HTTP Server
 /// 
@@ -14,7 +17,8 @@ use async_trait::async_trait;
 /// let http_server = HttpServer::new("127.0.0.1", "8080").await.unwrap(); // Create a new http listener
 /// ```
 pub struct HttpServer{
-    listener: TcpListener
+    listener: TcpListener,
+    pub routes: Routes<Box<dyn Fn(Request) -> String + Send>>,
 }
 
 
@@ -31,7 +35,8 @@ impl HttpServer{
     pub async fn new(ip: &str, port: &str) -> io::Result<Self>{
         let address = format!("{}:{}", ip, port);
         Ok(Self{
-            listener: TcpListener::bind(&address).await?
+            listener: TcpListener::bind(&address).await?,
+            routes: Routes::new(),
         })
     }
 
@@ -96,4 +101,37 @@ pub trait ConnectionHandler{
     /// 
     /// Gets called every time a connection is made.
     async fn handle_connection(&mut self, stream: TcpStream) -> Result<(), &str>;
+}
+
+// Define a connection callback for the HttpServer struct. Can be anything you want, as long as it returns a result and is async
+#[async_trait]
+impl ConnectionHandler for HttpServer{
+    async fn handle_connection(&mut self, stream: TcpStream) -> Result<(), &str>{
+        
+        let mut connection = Connection::new(stream); // Create our connection handler
+
+        let request_str = connection.read_to_string().await; // get a string value from the recieved data
+
+        let header = "HTTP/1.1 200 OK\r\n\r\n";
+        let head = r#"
+        <head>
+            <title>Async Server</title>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous" \>
+        </head>"#;
+        let body = r#"
+            <body class="bg-dark text-light align-middle text-center">
+                <h1>Data recieved successfully!</h1>
+                <p>Thanks for testing my asynchrynous web server</p>
+                <p>This is running from the trait!</p>
+            </body>"#;
+
+        let _ret_str = format!("{}{}{}", header, head, body);
+
+        // only needs the request as it constructs a `Request` to get the route and more info
+        let ret_str = self.routes.get_route(request_str).unwrap();
+
+        connection.write_string(ret_str).await.unwrap();
+
+        Ok(()) // Return the future
+    }
 }

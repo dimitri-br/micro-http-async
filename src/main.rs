@@ -1,63 +1,70 @@
-pub mod server;
-pub mod connection;
+use http_server::HttpServer;
+use http_server::Request;
 
-use async_trait::async_trait;
+/// # main handler
+/// 
+/// main handler is a test to test our route and function callbacks work
+/// 
+/// And it does!
+/// 
+/// The way it works is that we run test_handler when we recieve a connection. 
+/// 
+/// Then, this handler manipulates the request (for post info, or other info etc)
+/// 
+/// after, we return the response as a string. It is then served to the user.
+fn main_handler(_request: Request) -> String{
+    let header = "HTTP/1.1 200 OK\r\n\r\n";
+    let head = r#"
+    <head>
+        <title>Async Server</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous" \>
+    </head>"#;
+    let body = r#"
+        <body class="bg-dark text-light align-middle text-center">
+            <h1>Data recieved successfully!</h1>
+            <p>Thanks for testing my asynchrynous web server</p>
+            <p>This is running from the function!</p>
+        </body>"#;
 
-use tokio::net::TcpStream;
+    let ret_str = format!("{}{}{}", header, head, body);
 
-use std::future::Future;
-
-use server::{HttpServer, ConnectionHandler};
-use connection::Connection;
-
-
-
-// Define a connection callback for the HttpServer struct. Can be anything you want, as long as it returns a result and is async
-#[async_trait]
-impl ConnectionHandler for HttpServer{
-    async fn handle_connection(&mut self, stream: TcpStream) -> Result<(), &str>{
-        
-        let mut connection = Connection::new(stream); // Create our connection handler
-
-        let _recv_value = connection.read_to_string().await; // get a string value from the recieved data
-
-        let header = "HTTP/1.1 200 OK\r\n\r\n";
-        let head = r#"
-        <head>
-            <title>Async Server</title>
-            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous" \>
-        </head>"#;
-        let body = r#"
-            <body class="bg-dark text-light align-middle">
-                <h1>Data recieved successfully!</h1>
-                <p>Thanks for testing my asynchrynous web server</p>
-                <p>This is running from the trait!</p>
-            </body>"#;
-
-        let ret_str = format!("{}{}{}", header, head, body);
-
-        connection.write_string(ret_str).await.unwrap();
-
-        Ok(()) // Return the future
-    }
+    return ret_str;
 }
 
+/// We have to define a custom error handler, which defines what to do when we have a 404
+/// 
+/// Not doing this WILL result in an unrecoverable panic.
+fn error_handler(_request: Request) -> String{
+    let header = "HTTP/1.1 404 ERR\r\n\r\n";
+    let head = r#"
+    <head>
+        <title>Async Server</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous" \>
+    </head>"#;
+    let body = r#"
+        <body class="bg-dark text-light align-middle text-center">
+            <h1>Error 404</h1>
+            <p>Thanks for testing my asynchrynous web server</p>
+            <p>Unfortunately we ran into an issue :(</p>
+        </body>"#;
 
+    let ret_str = format!("{}{}{}", header, head, body);
+
+    return ret_str;
+}
+
+/// # main
+/// 
+/// Does what it says, just sets up the server and routes
+/// 
+/// then listens for incoming connections
 #[tokio::main]
 pub async fn main() {
-
-    callback_caller(callback).await;
-
     let mut http_server = HttpServer::new("127.0.0.1", "8080").await.unwrap();
+    
+    // must be placed on heap so it can be allocated at runtime (alternative is static)
+    http_server.routes.add_route("/".to_string(), Box::new(main_handler)).unwrap();
+    http_server.routes.add_route("err".to_string(), Box::new(error_handler)).unwrap();
 
     http_server.listen().await;
-}
-
-pub async fn callback(){
-    println!("Callback!");
-}
-
-async fn callback_caller<F, Fut>(f: F) where F: FnOnce() -> Fut, Fut: Future<Output = ()>,
-{
-    f().await;
 }
