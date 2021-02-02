@@ -1,0 +1,15 @@
+[package]
+name = "http_server"
+version = "0.0.1"
+authors = ["Dimitri Bobkov <bobkov.dimitri@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+async-trait = "0.1.4" # Allows us to use async in traits
+
+# Third party async
+[dependencies.tokio]
+version = "1.1.1" 
+features = ["full"]
