@@ -63,8 +63,8 @@ pub async fn main() {
     let mut http_server = HttpServer::new("127.0.0.1", "8080").await.unwrap();
     
     // must be placed on heap so it can be allocated at runtime (alternative is static)
-    http_server.routes.add_route("/".to_string(), Box::new(main_handler)).unwrap();
-    http_server.routes.add_route("err".to_string(), Box::new(error_handler)).unwrap();
+    http_server.routes.add_route("/".to_string(), Box::new(main_handler)).await.unwrap();
+    http_server.routes.add_route("err".to_string(), Box::new(error_handler)).await.unwrap();
 
     http_server.listen().await;
 }

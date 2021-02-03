@@ -17,7 +17,7 @@ impl<F: Fn(Request) -> String + Send> Routes<F>{
     /// # New
     /// 
     /// Create a new `Route` struct
-    pub fn new() -> Self{
+    pub async fn new() -> Self{
         Self{
             routes: HashMap::<String, F>::new(),
         }
@@ -27,7 +27,7 @@ impl<F: Fn(Request) -> String + Send> Routes<F>{
     /// 
     /// Adds a new route to the routes hashmap. If the route already exists,
     /// its value is updated
-    pub fn add_route(&mut self, route: String, content: F) -> Result<(), &str>{
+    pub async fn add_route(&mut self, route: String, content: F) -> Result<(), &str>{
         self.routes.insert(route, content);
         Ok(())
     }
@@ -37,7 +37,7 @@ impl<F: Fn(Request) -> String + Send> Routes<F>{
     /// Dynamically generate a new response for a route based on the request.
     /// 
     /// Define your own functions to handle this - it MUST return a string
-    pub fn get_route(&self, request: String) -> Result<String, &str>{
+    pub async fn get_route(&self, request: String) -> Result<String, &str>{
         let request = Request::new(request);
 
         let func = match self.routes.get(&request.uri){

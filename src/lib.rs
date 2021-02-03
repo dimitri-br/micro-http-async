@@ -70,7 +70,7 @@ mod connection;
 mod routes;
 mod request;
 
-pub use server::{HttpServer, ConnectionHandler};
+pub use server::HttpServer;
 pub use connection::Connection;
 pub use routes::Routes;
 pub use request::{Request, HttpMethod};
