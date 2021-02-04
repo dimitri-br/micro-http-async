@@ -6,13 +6,21 @@
 //! 
 //! ## How do I use it?
 //! 
+//! Firstly, install the crate and dependencies:
+//! 
+//! ```
+//! [dependencies]
+//! micro_http_async = "0.0.2"
+//! tokio = "1.1"
+//! ```
 //! This crate is designed to abstract away many of the low level code required to run a safe, asynchrynous web server
 //! 
 //! Here is a small example which shows how to route, use asynchrynous callbacks and load webpage templates from HTML files.
 //! 
 //! Please note this is probably not the final API
 //! 
-//! Example```
+//! **Example**
+//! ```
 //! use micro_http_async::HttpServer;
 //! use micro_http_async::Request;
 //! use micro_http_async::HtmlConstructor;

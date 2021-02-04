@@ -42,9 +42,34 @@ pub type Vars = HashMap<String, Variable>;
 /// 
 /// Alternatively you could create a static page with JavaScript that loads this information from a webapi route
 /// on the same server. 
+/// 
+/// Dynamic variables are defined as `[ var_name ]` in HTML, and
+/// just `var_name` in the Vars hashmap
+/// 
+/// Here is an example:
+/// 
+/// ```html
+/// <p>[ test_var ]</p>
+/// ```
+/// 
+/// ```rust
+/// let mut vars = Vars::new();
+/// vars.insert("test_var".to_string(), Variable::String("Test".to_string()));
+/// ```
+/// 
+/// This example shows a basic example of how the HTML code matches to Rust.
+/// 
+/// Please note that if there is no variable defined in the hashmap, it will not update with
+/// any dynamic values, and remain static. If the variable in the hashmap doesn't find the variable in the HTML,
+/// nothing will happen there as well.
 pub struct HtmlConstructor;
 
 impl HtmlConstructor{
+    /// # Construct Page
+    /// 
+    /// Takes in a file path (to the HTML file) and a `Vars` type.
+    /// 
+    /// Constructs the HTML page, returning a string value (also assigns all dynamic variables if any)
     pub async fn construct_page(path: &str, vars: Vars) -> String{
         let file = FileLoader::load_template(path).await;
 
@@ -53,7 +78,13 @@ impl HtmlConstructor{
         return file;
     }
 
-    pub fn set_dynamic_vars(mut file: String, vars: Vars) -> String{
+    /// # Set Dynamic Vars
+    /// 
+    /// Set the dynamic variables in a html file
+    /// 
+    /// Dynamic variables are defined as `[ var_name ]` in HTML, and
+    /// just `var_name` in the Vars hashmap
+    fn set_dynamic_vars(mut file: String, vars: Vars) -> String{
         for (key, var) in vars.iter(){
             let var_to_replace = format!("[ {} ]", key);
             match var{

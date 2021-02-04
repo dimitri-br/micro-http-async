@@ -5,6 +5,14 @@ A small, lightweight crate using async to serve web pages or webapis with high p
 
 ## How do I use it?
 
+Firstly, install the crate and dependencies:
+
+```
+[dependencies]
+micro_http_async = "0.0.2"
+tokio = "1.1"
+```
+
 This crate is designed to abstract away many of the low level code required to run a safe, asynchrynous web server
 
 Here is a small example which shows how to route, use asynchrynous callbacks and load webpage templates from HTML files.
@@ -12,6 +20,7 @@ Here is a small example which shows how to route, use asynchrynous callbacks and
 Please note this is probably not the final API
 
 Example 
+
 ```rust
 use micro_http_async::HttpServer;
 use micro_http_async::Request;
