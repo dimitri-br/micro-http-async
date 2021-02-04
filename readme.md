@@ -9,24 +9,25 @@ Firstly, install the crate and dependencies:
 
 ```
 [dependencies]
-micro_http_async = "0.0.2"
+micro_http_async = "*"
 tokio = "1.1"
 ```
-
 This crate is designed to abstract away many of the low level code required to run a safe, asynchrynous web server
 
 Here is a small example which shows how to route, use asynchrynous callbacks and load webpage templates from HTML files.
 
+For the HTML files included, please go to the repository and check the `templates` folder
+
 Please note this is probably not the final API
 
-Example 
-
-```rust
+**Example**
+```
 use micro_http_async::HttpServer;
 use micro_http_async::Request;
 use micro_http_async::HtmlConstructor;
 use micro_http_async::Vars;
 use micro_http_async::Variable;
+use micro_http_async::Response;
 
 /// # main handler
 /// 
@@ -53,9 +54,7 @@ fn main_handler(_request: Request) -> std::pin::Pin<Box<dyn std::future::Future<
 
         vars.insert("test_var".to_string(), Variable::String(test_string));
 
-       let header = "HTTP/1.1 200 OK\r\n\r\n";
-        let body = HtmlConstructor::construct_page("./templates/index.html", vars).await;
-        let page = format!("{}{}", header , body);
+        let page = HtmlConstructor::construct_page(Response::Ok, "./templates/index.html", vars).await;
         Ok(page) 
    };
 
@@ -72,9 +71,7 @@ fn error_handler(request: Request) -> std::pin::Pin<Box<dyn std::future::Future<
         let test_string = format!("Could not load webpage at <code>127.0.0.1:8080{}</code>", request.uri);
         vars.insert("uri".to_string(), Variable::String(test_string));
 
-        let header = "HTTP/1.1 404 ERR\r\n\r\n";
-        let body = HtmlConstructor::construct_page("./templates/err.html", vars).await;
-        let page = format!("{}{}", header , body);
+        let page = HtmlConstructor::construct_page(Response::Err, "./templates/err.html", vars).await;
         Ok(page) 
     };
 

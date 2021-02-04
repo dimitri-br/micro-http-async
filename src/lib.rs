@@ -10,12 +10,14 @@
 //! 
 //! ```
 //! [dependencies]
-//! micro_http_async = "0.0.2"
+//! micro_http_async = "*"
 //! tokio = "1.1"
 //! ```
 //! This crate is designed to abstract away many of the low level code required to run a safe, asynchrynous web server
 //! 
 //! Here is a small example which shows how to route, use asynchrynous callbacks and load webpage templates from HTML files.
+//! 
+//! For the HTML files included, please go to the repository and check the `templates` folder
 //! 
 //! Please note this is probably not the final API
 //! 
@@ -26,6 +28,7 @@
 //! use micro_http_async::HtmlConstructor;
 //! use micro_http_async::Vars;
 //! use micro_http_async::Variable;
+//! use micro_http_async::Response;
 //! 
 //! /// # main handler
 //! /// 
@@ -52,9 +55,7 @@
 //! 
 //!         vars.insert("test_var".to_string(), Variable::String(test_string));
 //! 
-//!        let header = "HTTP/1.1 200 OK\r\n\r\n";
-//!         let body = HtmlConstructor::construct_page("./templates/index.html", vars).await;
-//!         let page = format!("{}{}", header , body);
+//!         let page = HtmlConstructor::construct_page(Response::Ok, "./templates/index.html", vars).await;
 //!         Ok(page) 
 //!    };
 //! 
@@ -71,9 +72,7 @@
 //!         let test_string = format!("Could not load webpage at <code>127.0.0.1:8080{}</code>", request.uri);
 //!         vars.insert("uri".to_string(), Variable::String(test_string));
 //! 
-//!         let header = "HTTP/1.1 404 ERR\r\n\r\n";
-//!         let body = HtmlConstructor::construct_page("./templates/err.html", vars).await;
-//!         let page = format!("{}{}", header , body);
+//!         let page = HtmlConstructor::construct_page(Response::Err, "./templates/err.html", vars).await;
 //!         Ok(page) 
 //!     };
 //! 
@@ -111,9 +110,11 @@ mod connection;
 mod routes;
 mod request;
 mod html_loader;
+mod response;
 
 pub use server::HttpServer;
 pub use connection::Connection;
 pub use routes::Routes;
 pub use request::{Request, HttpMethod};
 pub use html_loader::{Variable, HtmlConstructor, FileLoader, Vars};
+pub use response::Response;

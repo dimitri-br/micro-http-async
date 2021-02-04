@@ -1,8 +1,12 @@
+/// Small example to show the functionings of the crate. Read the comments to see how everything 
+/// functions
+
 use micro_http_async::HttpServer;
 use micro_http_async::Request;
 use micro_http_async::HtmlConstructor;
 use micro_http_async::Vars;
 use micro_http_async::Variable;
+use micro_http_async::Response;
 
 /// # main handler
 /// 
@@ -20,6 +24,8 @@ use micro_http_async::Variable;
 /// 
 /// It should return a pinned box future result that implements send
 fn main_handler(_request: Request) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<String, String>> + Send>>{
+    println!("Connection success!");
+
     // We wrap the return_str as a future, so we can return it for our routing system to call await on
     // This works better than making the whole function a future, since doing that causes race errors.
     // By returning a Pinned Boxed future, we define it as a future so it works. Just looks a bit odd
@@ -29,9 +35,9 @@ fn main_handler(_request: Request) -> std::pin::Pin<Box<dyn std::future::Future<
 
         vars.insert("test_var".to_string(), Variable::String(test_string));
 
-        let header = "HTTP/1.1 200 OK\r\n\r\n";
-        let body = HtmlConstructor::construct_page("./templates/index.html", vars).await;
-        let page = format!("{}{}", header , body);
+
+        let page = HtmlConstructor::construct_page(Response::from(200), "./templates/index.html", vars).await;
+
         Ok(page) 
     };
 
@@ -42,15 +48,16 @@ fn main_handler(_request: Request) -> std::pin::Pin<Box<dyn std::future::Future<
 /// 
 /// Not doing this WILL result in an unrecoverable panic.
 fn error_handler(request: Request) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<String, String>> + Send>>{
+    println!("Connection error!");
+
 
     let return_future = async move {      
         let mut vars = Vars::new();
         let test_string = format!("Could not load webpage at <code>127.0.0.1:8080{}</code>", request.uri);
         vars.insert("uri".to_string(), Variable::String(test_string));
 
-        let header = "HTTP/1.1 404 ERR\r\n\r\n";
-        let body = HtmlConstructor::construct_page("./templates/err.html", vars).await;
-        let page = format!("{}{}", header , body);
+        let page = HtmlConstructor::construct_page(Response::ClientErr, "./templates/err.html", vars).await;
+        
         Ok(page) 
     };
 

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use tokio::io::AsyncReadExt;
 use tokio::fs::File;
-
+use crate::Response;
 
 /// # File Loader
 /// 
@@ -70,11 +70,19 @@ impl HtmlConstructor{
     /// Takes in a file path (to the HTML file) and a `Vars` type.
     /// 
     /// Constructs the HTML page, returning a string value (also assigns all dynamic variables if any)
-    pub async fn construct_page(path: &str, vars: Vars) -> String{
+    pub async fn construct_page(response_code: Response, path: &str, vars: Vars) -> String{
         let file = FileLoader::load_template(path).await;
 
         let file = HtmlConstructor::set_dynamic_vars(file, vars);
 
+        // This should be changed over to support all response types
+        let header_code = match response_code{
+            Response::Ok => {format!("HTTP/1.1 {} {}\r\n\r\n", 200, "OK")}
+            Response::Redirect => {format!("HTTP/1.1 {} {}\r\n\r\n", 301, "MOVED PERMANENTLY")}
+            Response::ClientErr => {format!("HTTP/1.1 {} {}\r\n\r\n", 404, "NOT FOUND")}
+            Response::ServerErr => {format!("HTTP/1.1 {} {}\r\n\r\n", 500, "INTERNEL SERVER ERROR")}
+        };
+        let file = format!("{}{}", header_code, file);
         return file;
     }
 
