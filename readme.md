@@ -11,7 +11,8 @@ Here is a small example which shows how to route, use asynchrynous callbacks and
 
 Please note this is probably not the final API
 
-Example ```rust
+Example 
+```rust
 use micro_http_async::HttpServer;
 use micro_http_async::Request;
 use micro_http_async::HtmlConstructor;
