@@ -1,25 +1,23 @@
 use std::collections::HashMap;
+use std::future::Future;
 use crate::Request;
-
 
 /// # Routes
 /// 
-/// This struct defines the routes. It uses a hashmap to do this.Connection
+/// This struct defines the routes. It uses a hashmap to do this.
 /// 
 /// `HashMap<Route, Content>` where content is the return content (ie, html or json).
-/// 
-/// TODO: get and post
-pub struct Routes<F: Fn(Request) -> String + Send>{
-    routes: HashMap<String, F>,
+pub struct Routes{
+    routes: HashMap::<String, std::pin::Pin<Box<dyn Fn(Request) -> std::pin::Pin<Box<dyn Future<Output = Result<String, String>> + Send>>>>>
 }
 
-impl<F: Fn(Request) -> String + Send> Routes<F>{
+impl Routes{
     /// # New
     /// 
     /// Create a new `Route` struct
     pub async fn new() -> Self{
         Self{
-            routes: HashMap::<String, F>::new(),
+            routes: HashMap::<String, std::pin::Pin<Box<dyn Fn(Request) -> std::pin::Pin<Box<dyn Future<Output = Result<String, String>> + Send>>>>>::new()
         }
     }
 
@@ -27,16 +25,17 @@ impl<F: Fn(Request) -> String + Send> Routes<F>{
     /// 
     /// Adds a new route to the routes hashmap. If the route already exists,
     /// its value is updated
-    pub async fn add_route(&mut self, route: String, content: F) -> Result<(), &str>{
+    pub async fn add_route(&mut self, route: String, content: std::pin::Pin<Box<dyn Fn(Request) -> std::pin::Pin<Box<dyn Future<Output = Result<String, String>> + Send>>>>){
         self.routes.insert(route, content);
-        Ok(())
     }
 
     /// # Get Route
     /// 
-    /// Dynamically generate a new response for a route based on the request.
+    /// This function takes in the response string from the `TcpStream` and searches the hashmap
+    /// for the callback function associated with the route. It then checks that the route is valid,
+    /// and runs it asynchrynously (using the request so that the callback can make use of the request data)
     /// 
-    /// Define your own functions to handle this - it MUST return a string
+    /// This function only runs the callback - handling POST and GET requests is up to the callback.
     pub async fn get_route(&self, request: String) -> Result<String, &str>{
         let request = Request::new(request);
 
@@ -45,7 +44,13 @@ impl<F: Fn(Request) -> String + Send> Routes<F>{
             None => self.routes.get(&"err".to_string()).unwrap(), // we assume we've got an error handler
         };
            
-        let result = func(request);
+        // Check that our function returned an Ok result, and unwrap it after it executes
+        let result: String = if let Ok(v) = func(request).await{
+            return Ok(v);
+        }else{
+            String::new() // Err returned, just return nothing
+        };
+
         Ok(result)
     }
 }

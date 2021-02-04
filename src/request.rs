@@ -41,6 +41,8 @@ impl Request{
     /// 
     /// Takes an input string (Which should be
     /// the request).
+    /// 
+    /// It will then construct itself and return, ready to use.
     pub fn new(request: String) -> Self{
         
         let request = Request::split_to_row(request);
@@ -60,12 +62,18 @@ impl Request{
         }
     }
 
+    /// # Split To Row
+    /// 
+    /// This function splits a string into rows for every new line
     fn split_to_row(string: String) -> Vec::<String>{
         let strings: Vec::<String> = string.split("\r\n").map(|x| x.to_string()).collect();
 
         strings
     }
 
+    /// # Get Method
+    /// 
+    /// This function gets the method from a http request (Eg, POST)
     fn get_method(strings: &Vec::<String>) -> Option<HttpMethod>{
         let mut method: Option<HttpMethod> = None;
         for string in strings.iter(){
@@ -114,6 +122,11 @@ impl Request{
         method
     }
 
+    /// # Get uri
+    /// 
+    /// This funcion gets the URI of the request
+    /// 
+    /// The URI is the requested route (eg, /about)
     fn get_uri(strings: &Vec::<String>) -> String{
         let string = &strings[0];
 
@@ -122,6 +135,11 @@ impl Request{
         strings[1].clone()
     }
 
+    /// # Get user agent
+    /// 
+    /// This function gets the user agent from the request
+    /// 
+    /// Can be useful when doing dynamic page downloads (eg, specific downloads for macos or android)
     fn get_user_agent(strings: &Vec::<String>) -> String{
         let mut agent = "none".to_string();
         for string in strings.iter(){

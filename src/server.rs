@@ -1,11 +1,8 @@
 use tokio::net::{TcpListener, TcpStream}; // Async versions of the stdlib implementation
 use tokio::io; // :D
 
-use async_trait::async_trait;
-
 use crate::Connection;
 use crate::Routes;
-use crate::Request;
 
 /// # HTTP Server
 /// 
@@ -18,7 +15,7 @@ use crate::Request;
 /// ```
 pub struct HttpServer{
     listener: TcpListener,
-    pub routes: Routes<Box<dyn Fn(Request) -> String + Send>>,
+    pub routes: Routes,
 }
 
 
