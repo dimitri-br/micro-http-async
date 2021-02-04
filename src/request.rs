@@ -31,6 +31,7 @@ pub struct Request{
     pub method: Option<HttpMethod>,
     pub uri: String,
     pub user_agent: String,
+    pub user_addr: std::net::SocketAddr,
     pub raw_request: Vec::<String>
 }
 
@@ -43,7 +44,7 @@ impl Request{
     /// the request).
     /// 
     /// It will then construct itself and return, ready to use.
-    pub fn new(request: String) -> Self{
+    pub fn new(request: String, user_addr: std::net::SocketAddr) -> Self{
         
         let request = Request::split_to_row(request);
 
@@ -58,6 +59,7 @@ impl Request{
             method,
             uri, 
             user_agent,
+            user_addr,
             raw_request: request
         }
     }

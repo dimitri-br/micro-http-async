@@ -36,8 +36,8 @@ impl Routes{
     /// and runs it asynchrynously (using the request so that the callback can make use of the request data)
     /// 
     /// This function only runs the callback - handling POST and GET requests is up to the callback.
-    pub async fn get_route(&self, request: String) -> Result<String, &str>{
-        let request = Request::new(request);
+    pub async fn get_route(&self, request: String, user_addr: std::net::SocketAddr) -> Result<String, &str>{
+        let request = Request::new(request, user_addr);
 
         let func = match self.routes.get(&request.uri){
             Some(v) => v,

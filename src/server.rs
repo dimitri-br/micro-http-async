@@ -45,8 +45,7 @@ impl HttpServer{
     pub async fn listen(&mut self){
         loop{
             let (socket, addr) = self.listener.accept().await.unwrap(); // Accept an incoming connection
-            println!("Recieved new connection from {:?}", addr); // Let us know who it is
-            self.handle_connection(socket).await.unwrap(); // Handle it
+            self.handle_connection(socket, addr).await.unwrap(); // Handle it
         }
     }
 
@@ -61,14 +60,14 @@ impl HttpServer{
     /// We define the content to return using the `Routes` struct in `HttpServer`
     /// 
     /// It returns a Result for better error handling if something goes wrong at any point during I/O operations
-    async fn handle_connection(&mut self, stream: TcpStream) -> Result<(), &str>{
+    async fn handle_connection(&mut self, stream: TcpStream, addr: std::net::SocketAddr) -> Result<(), &str>{
         
         let mut connection = Connection::new(stream); // Create our connection handler
 
         let request_str = connection.read_to_string().await; // get a string value from the recieved data
 
-        // only needs the request as it constructs a `Request` to get the route and more info
-        let ret_str = self.routes.get_route(request_str).await.unwrap();
+        // only needs the request and address as it constructs a `Request` to get the route and more info
+        let ret_str = self.routes.get_route(request_str, addr).await.unwrap();
 
         connection.write_string(ret_str).await.unwrap();
 
