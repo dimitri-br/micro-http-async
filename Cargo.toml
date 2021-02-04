@@ -7,6 +7,8 @@ description = "A small, lightweight crate using async to serve web pages or weba
 readme = "README.md"
 keywords = ["async", "http", "performance", "small"]
 license = "MIT"
+repository = "https://github.com/dimitribobkov/micro-http-async"
+documentation = "https://docs.rs/micro_http_async"
 
 [dependencies]
 async-trait = "0.1.4" # Allows us to use async in traits
