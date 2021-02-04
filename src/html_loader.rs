@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use tokio::io::AsyncReadExt;
 use tokio::fs::File;
 
@@ -18,7 +19,18 @@ impl FileLoader{
     }
 }
 
-pub trait Variable{}
+
+/// Enum to wrap variables for passing into the HtmlConstructor when constructing
+/// a html page
+pub enum Variable{
+    Int(i32),
+    Float(f32),
+    UInt(usize),
+    String(String),
+}
+
+/// Holds all variables to dynamically generate (similar to jinja in python)
+pub type Vars = HashMap<String, Variable>;
 
 /// # Html Constructor
 /// 
@@ -33,9 +45,33 @@ pub trait Variable{}
 pub struct HtmlConstructor;
 
 impl HtmlConstructor{
-    pub async fn construct_page(path: &str) -> String{
+    pub async fn construct_page(path: &str, vars: Vars) -> String{
         let file = FileLoader::load_template(path).await;
 
+        let file = HtmlConstructor::set_dynamic_vars(file, vars);
+
         return file;
+    }
+
+    pub fn set_dynamic_vars(mut file: String, vars: Vars) -> String{
+        for (key, var) in vars.iter(){
+            let var_to_replace = format!("[ {} ]", key);
+            match var{
+                Variable::Int(v) => {
+                    file = file.replace(&var_to_replace, &v.to_string());
+                },
+                Variable::Float(v) => {
+                    file = file.replace(&var_to_replace, &v.to_string());
+                },
+                Variable::UInt(v) => {
+                    file = file.replace(&var_to_replace, &v.to_string());
+                },
+                Variable::String(v) => {
+                    file = file.replace(&var_to_replace, &v);
+                },
+            };
+        }
+
+        file
     }
 }

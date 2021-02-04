@@ -12,11 +12,13 @@
 //! 
 //! Please note this is probably not the final API
 //! 
-//! ```
+//! Example```
 //! use micro_http_async::HttpServer;
 //! use micro_http_async::Request;
 //! use micro_http_async::HtmlConstructor;
-
+//! use micro_http_async::Vars;
+//! use micro_http_async::Variable;
+//! 
 //! /// # main handler
 //! /// 
 //! /// main handler is a test to test our route and function callbacks work
@@ -33,34 +35,43 @@
 //! /// 
 //! /// It should return a pinned box future result that implements send
 //! fn main_handler(_request: Request) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<String, String>> + Send>>{
-//!    // We wrap the return_str as a future, so we can return it for our routing system to call await on
-//!    // This works better than making the whole function a future, since doing that causes race errors.
-//!    // By returning a Pinned Boxed future, we define it as a future so it works. Just looks a bit odd
-//!    let ret_str = async move { 
+//!     // We wrap the return_str as a future, so we can return it for our routing system to call await on
+//!     // This works better than making the whole function a future, since doing that causes race errors.
+//!     // By returning a Pinned Boxed future, we define it as a future so it works. Just looks a bit odd
+//!     let return_future = async move { 
+//!         let mut vars = Vars::new();
+//!         let test_string = "This string will be outputted dynamically to the web page!".to_string();
+//! 
+//!         vars.insert("test_var".to_string(), Variable::String(test_string));
+//! 
 //!        let header = "HTTP/1.1 200 OK\r\n\r\n";
-//!        let body = HtmlConstructor::construct_page("./templates/index.html").await;
-//!        let page = format!("{}{}", header , body);
-//!        Ok(page) 
+//!         let body = HtmlConstructor::construct_page("./templates/index.html", vars).await;
+//!         let page = format!("{}{}", header , body);
+//!         Ok(page) 
 //!    };
-//!
-//!    return Box::pin(ret_str);
+//! 
+//!     return Box::pin(return_future);
 //! }
-//!
+//! 
 //! /// We have to define a custom error handler, which defines what to do when we have a 404
 //! /// 
 //! /// Not doing this WILL result in an unrecoverable panic.
-//! fn error_handler(_request: Request) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<String, String>> + Send>>{
-//!
-//!    let ret_str = async move {       
-//!        let header = "HTTP/1.1 404 ERR\r\n\r\n";
-//!        let body = HtmlConstructor::construct_page("./templates/err.html").await;
-//!        let page = format!("{}{}", header , body);
-//!        Ok(page) 
-//!    };
-//!
-//!    return Box::pin(ret_str);
+//! fn error_handler(request: Request) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<String, String>> + Send>>{
+//! 
+//!     let return_future = async move {      
+//!         let mut vars = Vars::new();
+//!         let test_string = format!("Could not load webpage at <code>127.0.0.1:8080{}</code>", request.uri);
+//!         vars.insert("uri".to_string(), Variable::String(test_string));
+//! 
+//!         let header = "HTTP/1.1 404 ERR\r\n\r\n";
+//!         let body = HtmlConstructor::construct_page("./templates/err.html", vars).await;
+//!         let page = format!("{}{}", header , body);
+//!         Ok(page) 
+//!     };
+//! 
+//!     return Box::pin(return_future);
 //! }
-//!
+//! 
 //! /// # main
 //! /// 
 //! /// Does what it says, just sets up the server and routes
@@ -68,16 +79,15 @@
 //! /// then listens for incoming connections
 //! #[tokio::main]
 //! pub async fn main() {
-//!    // Bind the server to a port and IP
-//!    let mut http_server = HttpServer::new("127.0.0.1", "8080").await.expect("Error binding to IP/Port");
-//!    
-//!    // Bind the routes to the callbacks
-//!    http_server.routes.add_route("/".to_string(), Box::pin(main_handler)).await;
-//!    http_server.routes.add_route("err".to_string(), Box::pin(error_handler)).await;
+//!     let mut http_server = HttpServer::new("127.0.0.1", "8080").await.expect("Error binding to IP/Port");
+//!     
+//!     // must be placed on heap so it can be allocated at runtime (alternative is static)
+//!     http_server.routes.add_route("/".to_string(), Box::pin(main_handler)).await;
+//!     http_server.routes.add_route("err".to_string(), Box::pin(error_handler)).await;
 //! 
-//!    // Listen for new connections
-//!    http_server.listen().await;
-//!}
+//!     http_server.listen().await;
+//! }
+//! 
 //! ```
 //! 
 //! This crate aims only to simplify webapi or lightweight web creation - not intended to run full scale web apps like chatrooms
@@ -98,4 +108,4 @@ pub use server::HttpServer;
 pub use connection::Connection;
 pub use routes::Routes;
 pub use request::{Request, HttpMethod};
-pub use html_loader::{Variable, HtmlConstructor, FileLoader};
+pub use html_loader::{Variable, HtmlConstructor, FileLoader, Vars};
