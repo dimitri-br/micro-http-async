@@ -1,4 +1,4 @@
-//! # http_server
+//! # micro_http_async
 //!
 //! ## What is it for?
 //! 
@@ -13,9 +13,9 @@
 //! Please note this is probably not the final API
 //! 
 //! ```
-//! use http_server::HttpServer;
-//! use http_server::Request;
-//! use http_server::HtmlConstructor;
+//! use micro_http_async::HttpServer;
+//! use micro_http_async::Request;
+//! use micro_http_async::HtmlConstructor;
 
 //! /// # main handler
 //! /// 

@@ -1,10 +1,12 @@
 [package]
-name = "http_server"
+name = "micro_http_async"
 version = "0.0.1"
 authors = ["Dimitri Bobkov <bobkov.dimitri@gmail.com>"]
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "A small, lightweight crate using async to serve web pages or webapis with high performance and low overhead."
+readme = "README.md"
+keywords = ["async", "http", "performance", "small"]
+license = "MIT"
 
 [dependencies]
 async-trait = "0.1.4" # Allows us to use async in traits
