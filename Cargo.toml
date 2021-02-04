@@ -1,6 +1,6 @@
 [package]
 name = "micro_http_async"
-version = "0.0.2"
+version = "0.0.3"
 authors = ["Dimitri Bobkov <bobkov.dimitri@gmail.com>"]
 edition = "2018"
 description = "A small, lightweight crate using async to serve web pages or webapis with high performance and low overhead."
