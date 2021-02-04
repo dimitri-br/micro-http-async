@@ -134,7 +134,13 @@ impl Request{
 
         let strings: Vec::<String> = string.split(" ").map(|x| x.to_string()).collect();
 
-        strings[1].clone()
+        let uri = if strings.len() > 1{
+            strings[1].clone()
+        }else{
+            "/error".to_string()
+        };
+        
+        uri
     }
 
     /// # Get user agent
