@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::future::Future;
 use crate::Request;
+use tokio::io::AsyncReadExt;
 
 /// # Routes
 /// 
@@ -39,9 +40,29 @@ impl Routes{
     pub async fn get_route(&self, request: String, user_addr: std::net::SocketAddr) -> Result<String, &str>{
         let request = Request::new(request, user_addr);
 
+        // Handle static files
+        if request.uri.contains("static"){
+            let file_path = format!(".{}", request.uri);
+            return match tokio::fs::File::open(file_path).await{
+                Ok(mut file_handle) => {
+                    let mut contents = vec![];
+                    file_handle.read_to_end(&mut contents).await.unwrap();
+                    Ok(String::from_utf8(contents).expect("File not valid UTF-8"))
+                }
+                Err(e) => {
+                    println!("Error loading static content: {}", e);
+                    Ok(String::from("ERROR - CONTENT NOT AVAILABLE"))
+                }
+            };
+        }
+
+        // If not static, handle the request
         let func = match self.routes.get(&request.uri){
             Some(v) => v,
-            None => self.routes.get(&"err".to_string()).unwrap(), // we assume we've got an error handler
+            None => {
+                println!("Error - user requested '{}', which does not exist on this server.", request.uri);
+                self.routes.get(&"err".to_string()).unwrap()// we assume we've got an error handler
+            } 
         };
            
         // Check that our function returned an Ok result, and unwrap it after it executes

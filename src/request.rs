@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 
 /// # Http Methods
 /// 
@@ -32,6 +33,7 @@ pub struct Request{
     pub uri: String,
     pub user_agent: String,
     pub user_addr: std::net::SocketAddr,
+    pub get_request: HashMap<String, String>,
     pub raw_request: Vec::<String>
 }
 
@@ -54,12 +56,15 @@ impl Request{
 
         let user_agent = Request::get_user_agent(&request);
 
+        let (get_request, uri) = Request::get_vars(&uri);
+
 
         Self{
             method,
             uri, 
             user_agent,
             user_addr,
+            get_request,
             raw_request: request
         }
     }
@@ -141,6 +146,32 @@ impl Request{
         };
         
         uri
+    }
+    
+    /// # Get Vars
+    /// 
+    /// This function takes in a URI and extracts the GET parameters, returning them as a hashmap
+    /// 
+    /// This can then be used by the callback
+    fn get_vars(uri: &String) -> (HashMap<String, String>, String){
+        let split_uri: Vec<String> = uri.split("?").map(|x| x.to_string()).collect();
+
+        let mut hash_vals = HashMap::<String, String>::new();
+
+        if uri.contains("?") && split_uri.len() > 1{
+            let get_vals = &split_uri[1];
+
+    
+            for val in get_vals.split("&"){
+                let split_vals: Vec<String> = val.split("=").map(|x| x.to_string()).collect();
+                if split_vals.len() > 1{
+                    hash_vals.insert(split_vals[0].clone(), split_vals[1].clone().replace("+", " "));
+                }
+            }
+        }
+
+        
+        (hash_vals, split_uri[0].clone())
     }
 
     /// # Get user agent
