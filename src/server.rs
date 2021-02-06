@@ -69,7 +69,14 @@ impl HttpServer{
         // only needs the request and address as it constructs a `Request` to get the route and more info
         let ret_str = self.routes.get_route(request_str, addr).await.unwrap();
 
-        connection.write_string(ret_str).await.unwrap();
+        match ret_str{
+            crate::DataType::Text(text) => {
+                connection.write_string(text).await.unwrap();
+            }
+            crate::DataType::Bytes(bytes) => {
+                connection.write_bytes(bytes).await.unwrap();
+            }
+        }
 
         Ok(()) // Return the future
     }

@@ -140,3 +140,4 @@ pub use routes::Routes;
 pub use request::{Request, HttpMethod};
 pub use html_loader::{Variable, HtmlConstructor, FileLoader, Vars};
 pub use response::Response;
+pub use routes::DataType;

@@ -1,17 +1,18 @@
 [package]
 name = "micro_http_async"
-version = "0.0.6"
+version = "0.0.7"
 authors = ["Dimitri Bobkov <bobkov.dimitri@gmail.com>"]
 edition = "2018"
 description = "A small, lightweight crate using async to serve web pages or webapis with high performance and low overhead."
 readme = "README.md"
 keywords = ["async", "http", "performance", "small"]
-catergories = ["asynchronous", "web-programming", "network-programming"]
+categories = ["asynchronous", "web-programming", "network-programming"]
 license = "MIT"
 repository = "https://github.com/dimitribobkov/micro-http-async"
 documentation = "https://docs.rs/micro_http_async"
 
 [dependencies]
+chunked_transfer = "1.4"
 
 # Third party async
 [dependencies.tokio]

@@ -80,6 +80,33 @@ impl Connection{
 
         Ok(())
     }
+
+    pub async fn write_bytes(&mut self, data: Vec<u8>) -> Result<(), Box<dyn Error>>{
+        let stream: &mut TcpStream = &mut self.0; // Get a reference to the stream
+
+        loop{
+            // Wait for the socket to be writable
+            stream.writable().await?;
+
+            // See `read_to_vec` for more explaination what happens here
+            //
+            // Try to write data, this may still fail with `WouldBlock`
+            // if the readiness event is a false positive.
+            match stream.try_write(&data) {
+                Ok(_) => {
+                    break;
+                }
+                Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
+                    continue;
+                }
+                Err(e) => {
+                    return Err(e.into());
+                }
+            }
+        }
+
+        Ok(())
+    }
 }
 
 /// Trim the ends of the `String` we got from the `TcpStream` so we don't waste buffer space with whitespace

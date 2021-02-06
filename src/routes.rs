@@ -2,6 +2,23 @@ use std::collections::HashMap;
 use std::future::Future;
 use crate::Request;
 use tokio::io::AsyncReadExt;
+use chunked_transfer::Encoder;
+use std::io::Write;
+
+
+/// # DataType
+/// 
+/// This returns the data type of the response, wrapping the response as well
+/// 
+/// Used mostly for returning static images as bytes
+/// 
+/// for example, if you're requesting for a static image from say `/static/img.png`,
+/// you would want `Bytes(content)` instead of `Text(content)`. The API already handles
+/// this for you, but it is worth keeping in mind how it works behind the scenes
+pub enum DataType{
+    Text(String),
+    Bytes(Vec<u8>)
+}
 
 /// # Routes
 /// 
@@ -37,7 +54,10 @@ impl Routes{
     /// and runs it asynchrynously (using the request so that the callback can make use of the request data)
     /// 
     /// This function only runs the callback - handling POST and GET requests is up to the callback.
-    pub async fn get_route(&self, request: String, user_addr: std::net::SocketAddr) -> Result<String, &str>{
+    /// 
+    /// If this function detects a request for static content - which it can only detect if the data is stored in
+    /// `/static/`, then it will return early with the static content, and not run any functions.
+    pub async fn get_route(&self, request: String, user_addr: std::net::SocketAddr) -> Result<DataType, &str>{
         let request = Request::new(request, user_addr);
 
         // Handle static files
@@ -47,11 +67,30 @@ impl Routes{
                 Ok(mut file_handle) => {
                     let mut contents = vec![];
                     file_handle.read_to_end(&mut contents).await.unwrap();
-                    Ok(String::from_utf8(contents).expect("File not valid UTF-8"))
+                    let result = String::from("HTTP/1.1 {} {}\r\nContent-type: image/jpeg;\r\nTransfer-Encoding: chunked\r\n\r\n");
+                    let mut result = result.into_bytes();
+                    let mut encoded = Vec::new();
+                    {
+                        let mut encoder = Encoder::with_chunks_size(&mut encoded, 8);
+                        encoder.write_all(&contents).unwrap();
+                    }
+                    result.extend(&encoded);
+                    match String::from_utf8(result.clone()){
+                        Ok(_) => {
+                            let result = String::from("HTTP/1.1 {} {}\r\nContent-type: text/css;\r\nTransfer-Encoding: chunked\r\n\r\n");
+                            let mut result = result.into_bytes();
+                            result.extend(&encoded);
+                            let v = String::from_utf8(result).expect("This should work");
+                            return Ok(DataType::Text(v))
+                        }
+                        Err(_) => {
+                            return Ok(DataType::Bytes(result))
+                        }
+                    }
                 }
                 Err(e) => {
                     println!("Error loading static content: {}", e);
-                    Ok(String::from("ERROR - CONTENT NOT AVAILABLE"))
+                    Ok(DataType::Text(String::from("ERROR - CONTENT NOT AVAILABLE")))
                 }
             };
         }
@@ -66,10 +105,10 @@ impl Routes{
         };
            
         // Check that our function returned an Ok result, and unwrap it after it executes
-        let result: String = if let Ok(v) = func(request).await{
-            return Ok(v);
+        let result = if let Ok(v) = func(request).await{
+            return Ok(DataType::Text(v));
         }else{
-            String::new() // Err returned, just return nothing
+            DataType::Text(String::new()) // Err returned, just return nothing
         };
 
         Ok(result)

@@ -19,7 +19,11 @@
             }
           </style>
       
-          
+        <!-- Custom icons for this template -->
+        <link rel="apple-touch-icon" sizes="180x180" href="/static/icon/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="/static/icon/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/static/icon/favicon-16x16.png">
+        <link rel="manifest" href="/static/icon/site.webmanifest">  
         <!-- Custom styles for this template -->
         <link href="/static/cover.css" rel="stylesheet">
     </head>
@@ -66,11 +70,17 @@
                     </form>
                 </div>
             </div>
+            <div class="container">
+              <h4>Testing static images are correctly loading</h4>
+              <a href="/static/icon/android-chrome-512x512.png">
+                <img src="/static/icon/android-chrome-512x512.png" alt="Statically Loaded Image" />
+              </a> 
+            </div>
 
             
         </main>
       
-        <footer class="mt-auto text-secondary-50">
+        <footer class="mt-auto text-secondary-50 border-top margin">
           <p>
             Documentation: <a href="https://docs.rs/micro_http_async">docs.rs</a>      
             Repository: <a href="https://github.com/dimitribobkov/micro-http-async">github.com</a>          
