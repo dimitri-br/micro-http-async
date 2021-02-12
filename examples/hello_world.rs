@@ -1,7 +1,7 @@
 /// Small example to show the functionings of the crate. Read the comments to see how everything 
 /// functions
 
-use micro_http_async::HttpServer;
+use micro_http_async::{HttpServer, JSONResponse};
 use micro_http_async::Request;
 use micro_http_async::HtmlConstructor;
 use micro_http_async::Vars;
@@ -74,6 +74,29 @@ fn error_handler(request: Request) -> std::pin::Pin<Box<dyn std::future::Future<
     return Box::pin(return_future);
 }
 
+#[derive(serde::Serialize, serde::Deserialize)]
+struct TestResponse{
+    pub name: String,
+}
+
+fn json_response_handler(request: Request) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<String, String>> + Send>>{
+    println!("JSON!");
+
+    println!("Get: {:?}", request.raw_request);
+    let return_future = async move {      
+        let json = serde_json::json!(
+            TestResponse{
+                name: "Hello, world!".into()
+            }
+        );
+        let page = JSONResponse::construct_response(Response::Ok, json.to_string()).await;
+        println!("{:?}", page);
+        Ok(page) 
+    };
+
+    return Box::pin(return_future);
+}
+
 /// # main
 /// 
 /// Does what it says, just sets up the server and routes
@@ -86,6 +109,7 @@ pub async fn main() {
     // must be placed on heap so it can be allocated at runtime (alternative is static)
     http_server.routes.add_route("/".to_string(), Box::pin(main_handler)).await;
     http_server.routes.add_route("err".to_string(), Box::pin(error_handler)).await;
+    http_server.routes.add_route("/json".to_string(), Box::pin(json_response_handler)).await;
 
     http_server.listen().await;
 }

@@ -132,6 +132,7 @@ mod connection;
 mod routes;
 mod request;
 mod html_loader;
+mod json_response;
 mod response;
 
 pub use server::HttpServer;
@@ -141,3 +142,4 @@ pub use request::{Request, HttpMethod};
 pub use html_loader::{Variable, HtmlConstructor, FileLoader, Vars};
 pub use response::Response;
 pub use routes::DataType;
+pub use json_response::JSONResponse;
