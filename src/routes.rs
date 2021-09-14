@@ -60,21 +60,35 @@ impl Routes{
     pub async fn get_route(&self, request: String, user_addr: std::net::SocketAddr) -> Result<DataType, &str>{
         let request = Request::new(request, user_addr);
 
-        // Handle static files
+        // Handle static files - check if theyre binary or text, and handle appropriately.
+        // Probably not the best method but it *works*
         if request.uri.contains("static"){
             let file_path = format!(".{}", request.uri);
             return match tokio::fs::File::open(file_path).await{
                 Ok(mut file_handle) => {
                     let mut contents = vec![];
                     file_handle.read_to_end(&mut contents).await.unwrap();
-                    let result = String::from("HTTP/1.1 {} {}\r\nContent-type: image/jpeg;\r\nTransfer-Encoding: chunked\r\n\r\n");
+                    
+                    let result = String::from("HTTP/1.1 {}\r\nContent-type: image/jpeg;\r\nTransfer-Encoding: chunked\r\n\r\n");
                     let mut result = result.into_bytes();
+
+                    // We split the data into chunks so we don't allocate a ton of data to the stack
+                    let chunks = contents.chunks(5);
+                    let mut iter_chunks = Vec::<std::io::IoSlice<>>::new();
+                    for chunk in chunks{
+                        iter_chunks.push(std::io::IoSlice::new(chunk));
+                    }
+
+                    // TODO: we need to figure out how to write chunked to the buffer using non-nightly features
+                    // Also, it might be worth moving to HTTP 2 for this as chunked is http 1 only
                     let mut encoded = Vec::new();
                     {
                         let mut encoder = Encoder::with_chunks_size(&mut encoded, 8);
-                        encoder.write_all(&contents).unwrap();
+                        encoder.write_all_vectored(&mut iter_chunks).unwrap();
                     }
                     result.extend(&encoded);
+
+
                     match String::from_utf8(result.clone()){
                         Ok(_) => {
                             let result = String::from("HTTP/1.1 {} {}\r\nContent-type: text/css;\r\nTransfer-Encoding: chunked\r\n\r\n");

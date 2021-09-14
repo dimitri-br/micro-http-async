@@ -65,9 +65,10 @@ impl HttpServer{
         let mut connection = Connection::new(stream); // Create our connection handler
 
         let request_str = connection.read_to_string().await; // get a string value from the recieved data
-
+        
         // only needs the request and address as it constructs a `Request` to get the route and more info
         let ret_str = self.routes.get_route(request_str, addr).await.unwrap();
+
 
         match ret_str{
             crate::DataType::Text(text) => {

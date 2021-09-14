@@ -9,6 +9,9 @@ use crate::Response;
 pub struct FileLoader;
 
 impl FileLoader{
+    /// # Load Template
+    /// 
+    /// Loads a template from a given path, returning the loaded file as a `String`
     pub async fn load_template(path: &str) -> String{
         let mut file_handle = File::open(path).await.unwrap();
         

@@ -124,8 +124,18 @@
 //! as well as asynchrynous file loading and more. 
 //! 
 //! The demo above uses 0% CPU under no load, and less than 10mb of memory under usage
+//! 
+//! Changelog v0.1.0:
+//! 
+//! Fixed some issues with stackoverflows when loading static content like images. 
+//! A workaround was found, however for the time being you will need to use `nightly`
+//! for this crate. Also I've not figured out a better way to store futures yet, but do 
+//! feel free to open an issue/contribute if you know a better way!
 #![doc(test(attr(deny(warnings))))]
 #![doc(test(no_crate_inject))]
+
+// This is a workaround while we wait for the feature to become stable
+#![feature(write_all_vectored)]
 
 mod server;
 mod connection;

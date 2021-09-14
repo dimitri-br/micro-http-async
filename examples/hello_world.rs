@@ -23,12 +23,15 @@ use micro_http_async::Response;
 /// The syntax is a bit weird but if it works it works. I'll try fix it :')
 /// 
 /// It should return a pinned box future result that implements send
-fn main_handler(request: Request) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<String, String>> + Send>>{
-    println!("REQ: {:?}", request.raw_request);
-    // We wrap the return_str as a future, so we can return it for our routing system to call await on
-    // This works better than making the whole function a future, since doing that causes race errors.
+fn main_handler(request: Request) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<String, String>> + Send>>{    
+    // We wrap the return_str (the actual response we want to return to the user) as a future, so we can return it for our routing 
+    // system to use asynchrynously.
+    // Hopefully in future this will work better, but this is the only reliable way I found to store futures in the routing system.
     // By returning a Pinned Boxed future, we define it as a future so it works. Just looks a bit odd
     let return_future = async move { 
+        println!("{:?} -> {:?} {:?}", request.user_addr, request.method.unwrap(), request.uri);
+
+
         let mut vars = Vars::new();
         let test_string = "This string will be outputted dynamically to the web page!".to_string();
         
@@ -58,10 +61,9 @@ fn main_handler(request: Request) -> std::pin::Pin<Box<dyn std::future::Future<O
 /// 
 /// Not doing this WILL result in an unrecoverable panic.
 fn error_handler(request: Request) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<String, String>> + Send>>{
-    println!("Connection error!");
-
-    println!("Get: {:?}", request.raw_request);
     let return_future = async move {      
+        println!("{:?} -> {:?} {:?}", request.user_addr, request.method.unwrap(), request.uri);
+
         let mut vars = Vars::new();
         let test_string = format!("Could not load webpage at <code>127.0.0.1:8080{}</code>", request.uri);
         vars.insert("uri".to_string(), Variable::String(test_string));
@@ -74,23 +76,26 @@ fn error_handler(request: Request) -> std::pin::Pin<Box<dyn std::future::Future<
     return Box::pin(return_future);
 }
 
+// If we choose to use JSON (eg, for APIs), we can use the following.
+// We define the JSON as a rust struct, allowing us to represent it through rust. We serialize this
+// using serde.
 #[derive(serde::Serialize, serde::Deserialize)]
 struct TestResponse{
     pub name: String,
 }
 
+// Then, when we handle the response, we convert the Struct using serde_json. We use the JSONResponse class to create
+// a response we can send back to the user, using that weird looking return_future method and the box::pins lol.
 fn json_response_handler(request: Request) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<String, String>> + Send>>{
-    println!("JSON!");
-
-    println!("Get: {:?}", request.raw_request);
-    let return_future = async move {      
+    let return_future = async move {    
+        println!("{:?} -> {:?} {:?}", request.user_addr, request.method.unwrap(), request.uri);
+  
         let json = serde_json::json!(
             TestResponse{
                 name: "Hello, world!".into()
             }
         );
         let page = JSONResponse::construct_response(Response::Ok, json.to_string()).await;
-        println!("{:?}", page);
         Ok(page) 
     };
 

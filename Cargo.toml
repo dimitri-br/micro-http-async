@@ -1,6 +1,6 @@
 [package]
 name = "micro_http_async"
-version = "0.0.8"
+version = "0.1.0"
 authors = ["Dimitri Bobkov <bobkov.dimitri@gmail.com>"]
 edition = "2018"
 description = "A small, lightweight crate using async to serve web pages or webapis with high performance and low overhead."
@@ -18,8 +18,8 @@ serde_json = "1.0"
 
 # Third party async
 [dependencies.tokio]
-version = "1.1.1" 
-features = ["full"]
+version = "1.11.0" 
+features = ["net", "fs", "macros", "io-util", "rt-multi-thread"]
 
 # Serialize stuff
 [dependencies.serde]

@@ -16,6 +16,8 @@ impl Connection{
         Connection(stream)
     }
 
+    /// # Read To String
+    /// 
     /// Read the `TcpStream` to a `String`
     pub async fn read_to_string(&self) -> String{
         let mut string = String::from_utf8(self.read_to_vec().await.expect("Error reading vec from stream")).expect("Error decoding stream to utf-8");
@@ -24,9 +26,11 @@ impl Connection{
         string
     }
 
+    /// # Read To Vec
+    /// 
     /// Read the `TcpStream` to a `Vec<u8>`. Returns a `Result` as we cannot guarantee a successful read.
     pub async fn read_to_vec(&self) -> Result<Vec::<u8>, Box<dyn Error>>{
-        let mut buffer = [0; 4096]; // Create our buffer
+        let mut buffer = [0; 2048]; // Create our buffer
 
         let stream: &TcpStream = &self.0; // Get a reference to the stream
 
@@ -53,6 +57,8 @@ impl Connection{
         Ok(buffer) // return our vec
     }
 
+    /// # Write String
+    /// 
     /// Write a `String` value to the `TcpStream`. Returns a `Result` as we cannot guarantee a successful write.
     pub async fn write_string(&mut self, data: String) -> Result<(), Box<dyn Error>>{
         let stream: &mut TcpStream = &mut self.0; // Get a reference to the stream
@@ -81,6 +87,9 @@ impl Connection{
         Ok(())
     }
 
+    /// # Write Bytes
+    /// 
+    /// Write bytes to the TCP stream, useful for sending data for things such as images or downloadable binary files
     pub async fn write_bytes(&mut self, data: Vec<u8>) -> Result<(), Box<dyn Error>>{
         let stream: &mut TcpStream = &mut self.0; // Get a reference to the stream
 

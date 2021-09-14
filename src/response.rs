@@ -18,6 +18,9 @@ pub enum Response{
 }
 
 impl std::convert::From<u32> for Response{
+    /// # from
+    /// 
+    /// Convert a u32 to a response
     fn from(v: u32) -> Response{
         match v{
             200..=299 => { return Response::Ok; }
