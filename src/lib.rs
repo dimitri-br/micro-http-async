@@ -10,8 +10,16 @@
 //! ```
 //! [dependencies]
 //! micro_http_async = "*"
-//! tokio = "1.1"
+//! tokio = "1.11.0"
 //! ```
+//! 
+//! And if you want to support JSON:
+//! 
+//! ```
+//! serde_json = "1.0"
+//! serde = {version = "1.0", features = ["derive"]}
+//! ```
+//! 
 //! This crate is designed to abstract away many of the low level code required to run a safe, asynchrynous web server
 //! 
 //! Here is a small example which shows how to route, use asynchrynous callbacks and load webpage templates from HTML files.
