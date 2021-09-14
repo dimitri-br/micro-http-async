@@ -123,4 +123,13 @@ This crate aims only to simplify webapi or lightweight web creation - not intend
 or other high intensity applications. It implements a simple asynchrynous routing system (Made using hashmaps for speed and efficiency)
 as well as asynchrynous file loading and more. 
 
-The demo above uses 0% CPU under no load, and less than 10mb of memory under usage
+The demo above uses 0% CPU under no load, and less than 10mb of memory under usage.
+
+It compiles in 1m 34s on an i5 5500u (release) from scratch and sits at 700kb.
+
+Changelog v0.1.0:
+
+Fixed some issues with stackoverflows when loading static content like images. 
+A workaround was found, however for the time being you will need to use `nightly`
+for this crate. Also I've not figured out a better way to store futures yet, but do 
+feel free to open an issue/contribute if you know a better way!

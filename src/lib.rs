@@ -123,7 +123,9 @@
 //! or other high intensity applications. It implements a simple asynchrynous routing system (Made using hashmaps for speed and efficiency)
 //! as well as asynchrynous file loading and more. 
 //! 
-//! The demo above uses 0% CPU under no load, and less than 10mb of memory under usage
+//! The demo above uses 0% CPU under no load, and less than 10mb of memory under usage.
+//! 
+//! It compiles in 1m 34s on an i5 5500u (release) from scratch and sits at 700kb.
 //! 
 //! Changelog v0.1.0:
 //! 
