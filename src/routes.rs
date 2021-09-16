@@ -3,8 +3,38 @@ use std::future::Future;
 use crate::Request;
 use tokio::io::AsyncReadExt;
 use chunked_transfer::Encoder;
+use futures::future::BoxFuture;
 use std::io::Write;
 
+pub trait RouteDef{
+    fn call(&self, request: Request) -> BoxFuture<'static, Result<String, String>>;
+}
+impl<T, F> RouteDef for T where T: Fn(Request) -> F, F: Future<Output = Result<String, String>> + Send + 'static{
+    fn call(&self, request: Request) -> BoxFuture<'static, Result<String, String>> {
+       Box::pin(self(request))
+    }
+}
+
+pub struct Route{
+    function: Box<dyn RouteDef>
+}
+
+impl Route{
+    pub fn new(function:Box<dyn RouteDef>) -> Self{
+        Self{
+            function
+        }
+    }
+
+    pub async fn run(&self, request: Request) -> DataType{
+        // Check that our function returned an Ok result, and unwrap it after it executes
+        if let Ok(v) = self.function.call(request).await{
+            DataType::Text(v)
+        }else{
+            DataType::Text(String::new()) // Err returned, just return nothing
+        }
+    }
+}
 
 /// # DataType
 /// 
@@ -26,7 +56,7 @@ pub enum DataType{
 /// 
 /// `HashMap<Route, Content>` where content is the return content (ie, html or json).
 pub struct Routes{
-    routes: HashMap::<String, std::pin::Pin<Box<dyn Fn(Request) -> std::pin::Pin<Box<dyn Future<Output = Result<String, String>> + Send>>>>>
+    routes: HashMap::<String, Route>
 }
 
 impl Routes{
@@ -35,7 +65,7 @@ impl Routes{
     /// Create a new `Route` struct
     pub async fn new() -> Self{
         Self{
-            routes: HashMap::<String, std::pin::Pin<Box<dyn Fn(Request) -> std::pin::Pin<Box<dyn Future<Output = Result<String, String>> + Send>>>>>::new()
+            routes: HashMap::<String, Route>::new()
         }
     }
 
@@ -43,7 +73,7 @@ impl Routes{
     /// 
     /// Adds a new route to the routes hashmap. If the route already exists,
     /// its value is updated
-    pub async fn add_route(&mut self, route: String, content: std::pin::Pin<Box<dyn Fn(Request) -> std::pin::Pin<Box<dyn Future<Output = Result<String, String>> + Send>>>>){
+    pub async fn add_route(&mut self, route: String, content: Route){
         self.routes.insert(route, content);
     }
 
@@ -118,12 +148,7 @@ impl Routes{
             } 
         };
            
-        // Check that our function returned an Ok result, and unwrap it after it executes
-        let result = if let Ok(v) = func(request).await{
-            return Ok(DataType::Text(v));
-        }else{
-            DataType::Text(String::new()) // Err returned, just return nothing
-        };
+        let result = func.run(request).await;
 
         Ok(result)
     }

@@ -161,5 +161,5 @@ pub use routes::Routes;
 pub use request::{Request, HttpMethod};
 pub use html_loader::{Variable, HtmlConstructor, FileLoader, Vars};
 pub use response::Response;
-pub use routes::DataType;
+pub use routes::{DataType, Route, RouteDef};
 pub use json_response::JSONResponse;
