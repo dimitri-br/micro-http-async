@@ -1,13 +1,17 @@
 /// Small example to show the functionings of the crate. Read the comments to see how everything 
 /// functions
 
+// All the imports we need
 use micro_http_async::{HttpServer, JSONResponse};
 use micro_http_async::Request;
 use micro_http_async::HtmlConstructor;
 use micro_http_async::Vars;
 use micro_http_async::Variable;
 use micro_http_async::Response;
-use micro_http_async::{Route, RouteDef};
+use micro_http_async::Route;
+
+// Macros
+use micro_http_async::create_route;
 
 /// # main handler
 /// 
@@ -20,14 +24,11 @@ use micro_http_async::{Route, RouteDef};
 /// Then, this handler manipulates the request (for post info, or other info etc)
 /// 
 /// after, we return the response as a string. It is then served to the user.
-/// 
-/// The syntax is a bit weird but if it works it works. I'll try fix it :')
-/// 
-/// It should return a pinned box future result that implements send
 async fn main_handler(request: Request) -> Result<String, String>{    
     println!("{:?} -> {:?} {:?}", request.user_addr, request.method.unwrap(), request.uri);
 
 
+    // Setup vars, which will define how vars are set in the page
     let mut vars = Vars::new();
     let test_string = "This string will be outputted dynamically to the web page!".to_string();
     
@@ -43,9 +44,10 @@ async fn main_handler(request: Request) -> Result<String, String>{
         vars.insert("name".to_string(), Variable::String("".to_string()));
     }
 
-
+    // Construct the page. We need the response code and page to submit, as well as vars to set. It returns the full page including headers.
     let page = HtmlConstructor::construct_page(Response::from(200), "./templates/index.html", vars).await;
 
+    // Return the page as a Result
     Ok(page) 
 }
 
@@ -83,6 +85,8 @@ async fn json_response_handler(request: Request) -> Result<String, String>{
             name: "Hello, world!".into()
         }
     );
+
+    // This differs from the HTMLConstructor, as we don't take vars as an input
     let page = JSONResponse::construct_response(Response::Ok, json.to_string()).await;
     Ok(page) 
 }
@@ -98,9 +102,9 @@ pub async fn main() {
     
     // must be placed on heap so it can be allocated at runtime (alternative is static)
     
-    http_server.routes.add_route("/".to_string(), Route::new(Box::new(main_handler))).await;
-    http_server.routes.add_route("err".to_string(), Route::new(Box::new(error_handler))).await;
-    http_server.routes.add_route("/json".to_string(), Route::new(Box::new(json_response_handler))).await;
+    http_server.routes.add_route("/".to_string(), create_route!(main_handler)).await; // Use the macro
+    http_server.routes.add_route("err".to_string(), Route::new(Box::new(error_handler))).await; // Do it manually
+    http_server.routes.add_route("/json".to_string(), create_route!(json_response_handler)).await;
 
     http_server.listen().await;
 }

@@ -6,26 +6,46 @@ use chunked_transfer::Encoder;
 use futures::future::BoxFuture;
 use std::io::Write;
 
+/// # RouteDef
+///
+/// This trait creates a helpful function that can convert an asynchrynous function without much user input.
+///
+/// This cleans up the API quite a bit, only requiring the user to Box the function they want to use.
+///
+/// Hopefully I figure out macros soon so I can simplify the whole process further to a single macro.
 pub trait RouteDef{
     fn call(&self, request: Request) -> BoxFuture<'static, Result<String, String>>;
 }
 impl<T, F> RouteDef for T where T: Fn(Request) -> F, F: Future<Output = Result<String, String>> + Send + 'static{
+    /// # Call
+    /// Run the function (defined as being a future of type T), taking in the `request` we want to use
     fn call(&self, request: Request) -> BoxFuture<'static, Result<String, String>> {
        Box::pin(self(request))
     }
 }
 
+/// # Route
+///
+/// This struct defines a `Route`. A route is an address defined on a webserver by a `/`. For example, `localhost/search` - `/search` is the route.
+///
+/// This struct will store a reference to a function or closure, and will run it automatically when a user visits the corresponding route defined to the function.
 pub struct Route{
     function: Box<dyn RouteDef>
 }
 
 impl Route{
-    pub fn new(function:Box<dyn RouteDef>) -> Self{
+    /// # New
+    /// 
+    /// Create a new route, taking in a Boxed function as its input. 
+    pub fn new(function: Box<dyn RouteDef>) -> Self{
         Self{
             function
         }
     }
 
+    /// # Run
+    ///
+    /// Run the function, taking in the request as its input. It will return a corresponding DataType based on the output of the function.
     pub async fn run(&self, request: Request) -> DataType{
         // Check that our function returned an Ok result, and unwrap it after it executes
         if let Ok(v) = self.function.call(request).await{
