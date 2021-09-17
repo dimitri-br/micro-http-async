@@ -48,7 +48,7 @@
             <div class="container">
                 <h1>Server is up and running!</h1>
                 <p class="lead">Everything is good to go! Check the footer for information to get you up and running, and test that error handling works with the link just below</p>
-                <p class="lead">Here is a dynamically generated string: [ test_var ]</p>
+                <p class="lead">Here is a dynamically generated string that will tell you what method you've just used: [ test_var ]</p>
                 <p class="lead">[ name ]</p>
                 <p class="lead">
                   <a href="/err" class="w-100 btn btn-lg btn-outline-primary">Test error handling</a>
@@ -60,7 +60,7 @@
                     <h3 class="my-0 fw-normal">Test GET parameters:</h3>
                 </div>
                 <div class="card-body">
-                    <form method="GET" target="/">
+                    <form method="GET">
                         <div class="mb-3">
                             <label for="name" class="form-label">Enter something to print to the screen:</label>
                             <input type="text" class="form-control" id="name" name="name" aria-describedby="text">
@@ -70,6 +70,21 @@
                     </form>
                 </div>
             </div>
+            <div class="card mb-4 shadow-lg p-3 text-dark">
+              <div class="card-header">
+                  <h3 class="my-0 fw-normal">Test POST parameters:</h3>
+              </div>
+              <div class="card-body">
+                  <form method="POST">
+                      <div class="mb-3">
+                          <label for="name" class="form-label">Enter something to POST to the server:</label>
+                          <input type="text" class="form-control" id="name" name="name" aria-describedby="text">
+                          <div id="textHelp" class="form-text">Enter any text value</div>
+                      </div>
+                      <button type="submit" class="btn btn-primary">Submit</button>
+                  </form>
+              </div>
+          </div>
             <div class="container">
               <h4>Testing static images are correctly loading</h4>
               <a href="/static/icon/android-chrome-512x512.png">

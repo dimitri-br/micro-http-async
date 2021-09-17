@@ -1,31 +1,30 @@
-use std::collections::HashMap;
-use tokio::io::AsyncReadExt;
-use tokio::fs::File;
 use crate::Response;
+use std::collections::HashMap;
+use tokio::fs::File;
+use tokio::io::AsyncReadExt;
 
 /// # File Loader
-/// 
+///
 /// Loads a html file from a templates folder. Its sole purpose it to load files asynchrynously
 pub struct FileLoader;
 
-impl FileLoader{
+impl FileLoader {
     /// # Load Template
-    /// 
+    ///
     /// Loads a template from a given path, returning the loaded file as a `String`
-    pub async fn load_template(path: &str) -> String{
+    pub async fn load_template(path: &str) -> String {
         let mut file_handle = File::open(path).await.unwrap();
-        
+
         let mut contents = vec![];
         file_handle.read_to_end(&mut contents).await.unwrap();
-        
+
         String::from_utf8(contents).expect("File not valid UTF-8")
     }
 }
 
-
 /// Enum to wrap variables for passing into the HtmlConstructor when constructing
 /// a html page
-pub enum Variable{
+pub enum Variable {
     Int(i32),
     Float(f32),
     UInt(usize),
@@ -36,81 +35,89 @@ pub enum Variable{
 pub type Vars = HashMap<String, Variable>;
 
 /// # Html Constructor
-/// 
+///
 /// Loads a html file and constructs it for dynamic web loading
-/// 
+///
 /// For example, when loading a template, you can pass through variables in a vec to implement them in your page
-/// 
+///
 /// You can use this for things like user info or other server side information
-/// 
+///
 /// Alternatively you could create a static page with JavaScript that loads this information from a webapi route
-/// on the same server. 
-/// 
+/// on the same server.
+///
 /// Dynamic variables are defined as `[ var_name ]` in HTML, and
 /// just `var_name` in the Vars hashmap
-/// 
+///
 /// Here is an example:
-/// 
+///
 /// ```html
 /// <p>[ test_var ]</p>
 /// ```
-/// 
+///
 /// ```rust
 /// let mut vars = Vars::new();
 /// vars.insert("test_var".to_string(), Variable::String("Test".to_string()));
 /// ```
-/// 
+///
 /// This example shows a basic example of how the HTML code matches to Rust.
-/// 
+///
 /// Please note that if there is no variable defined in the hashmap, it will not update with
 /// any dynamic values, and remain static. If the variable in the hashmap doesn't find the variable in the HTML,
 /// nothing will happen there as well.
 pub struct HtmlConstructor;
 
-impl HtmlConstructor{
+impl HtmlConstructor {
     /// # Construct Page
-    /// 
+    ///
     /// Takes in a file path (to the HTML file) and a `Vars` type.
-    /// 
+    ///
     /// Constructs the HTML page, returning a string value (also assigns all dynamic variables if any)
-    pub async fn construct_page(response_code: Response, path: &str, vars: Vars) -> String{
+    pub async fn construct_page(response_code: Response, path: &str, vars: Vars) -> String {
         let file = FileLoader::load_template(path).await;
 
         let file = HtmlConstructor::set_dynamic_vars(file, vars);
 
         // This should be changed over to support all response types
-        let header_code = match response_code{
-            Response::Ok => {format!("HTTP/1.1 {} {}\r\n\r\n", 200, "OK")}
-            Response::Redirect => {format!("HTTP/1.1 {} {}\r\n\r\n", 301, "MOVED PERMANENTLY")}
-            Response::ClientErr => {format!("HTTP/1.1 {} {}\r\n\r\n", 404, "NOT FOUND")}
-            Response::ServerErr => {format!("HTTP/1.1 {} {}\r\n\r\n", 500, "INTERNEL SERVER ERROR")}
+        let header_code = match response_code {
+            Response::Ok => {
+                format!("HTTP/1.1 {} {}\r\n\r\n", 200, "OK")
+            }
+            Response::Redirect => {
+                format!("HTTP/1.1 {} {}\r\n\r\n", 301, "MOVED PERMANENTLY")
+            }
+            Response::ClientErr => {
+                format!("HTTP/1.1 {} {}\r\n\r\n", 404, "NOT FOUND")
+            }
+            Response::ServerErr => {
+                format!("HTTP/1.1 {} {}\r\n\r\n", 500, "INTERNEL SERVER ERROR")
+            }
         };
         let file = format!("{}{}", header_code, file);
         return file;
     }
 
     /// # Set Dynamic Vars
-    /// 
+    ///
     /// Set the dynamic variables in a html file
-    /// 
+    ///
     /// Dynamic variables are defined as `[ var_name ]` in HTML, and
     /// just `var_name` in the Vars hashmap
-    fn set_dynamic_vars(mut file: String, vars: Vars) -> String{
-        for (key, var) in vars.iter(){
+    fn set_dynamic_vars(mut file: String, vars: Vars) -> String {
+        for (key, var) in vars.iter() {
             let var_to_replace = format!("[ {} ]", key);
-            match var{
+            match var {
                 Variable::Int(v) => {
                     file = file.replace(&var_to_replace, &v.to_string());
-                },
+                }
                 Variable::Float(v) => {
                     file = file.replace(&var_to_replace, &v.to_string());
-                },
+                }
                 Variable::UInt(v) => {
                     file = file.replace(&var_to_replace, &v.to_string());
-                },
+                }
                 Variable::String(v) => {
                     file = file.replace(&var_to_replace, &v);
-                },
+                }
             };
         }
 

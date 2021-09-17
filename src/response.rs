@@ -1,12 +1,12 @@
 /// # Response
-/// 
+///
 /// This enum simplifies return codes for HTTP responses
 /// ```
 /// let ok = Response::Ok;
 /// // OR
 /// let ok = Response::from(200);
 /// ```
-pub enum Response{
+pub enum Response {
     /// All Ok
     Ok,
     /// Link/Page has moved, redirect
@@ -17,17 +17,27 @@ pub enum Response{
     ServerErr,
 }
 
-impl std::convert::From<u32> for Response{
+impl std::convert::From<u32> for Response {
     /// # from
-    /// 
+    ///
     /// Convert a u32 to a response
-    fn from(v: u32) -> Response{
-        match v{
-            200..=299 => { return Response::Ok; }
-            300..=399 => { return Response::Redirect; }
-            400..=499 => { return Response::ClientErr; }
-            500..=599 => { return Response::ServerErr; }
-            _ => { return Response::ServerErr; }
+    fn from(v: u32) -> Response {
+        match v {
+            200..=299 => {
+                return Response::Ok;
+            }
+            300..=399 => {
+                return Response::Redirect;
+            }
+            400..=499 => {
+                return Response::ClientErr;
+            }
+            500..=599 => {
+                return Response::ServerErr;
+            }
+            _ => {
+                return Response::ServerErr;
+            }
         }
     }
 }
