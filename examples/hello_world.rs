@@ -35,14 +35,14 @@ async fn main_handler(request: Request) -> Result<String, String> {
     // Setup vars, which will define how vars are set in the page
     let mut vars = Vars::new();
 
-    let mut test_string = "".to_string();
+    let test_string: String;
     // Shows how to compare the various methods to create interactive sites
     if request.method.unwrap() == HttpMethod::Get {
         test_string = "You used a GET request!".to_string();
     } else {
         test_string = format!("You used a POST request, {}", String::from_utf8(request.post_request.get("name").unwrap().get_data().await).unwrap());
         let test_file = request.post_request.get("file1").unwrap();
-        std::fs::write(&test_file.file_name, test_file.get_data::<Vec<u8>>().await);
+        std::fs::write(&test_file.file_name, test_file.get_data::<Vec<u8>>().await).unwrap();
     }
 
     vars.insert("test_var".to_string(), Variable::String(test_string));

@@ -195,7 +195,6 @@ impl Request {
         //println!("{:?}", strings);
 
         if !strings.contains(&"Content-Type: application/x-www-form-urlencoded".to_string()) && !strings.contains(&"Content-Type: multipart/form-data".to_string()){
-            println!("{:?}", strings);
             return HashMap::new();
         }
 
@@ -287,7 +286,6 @@ impl Request {
             }
         }
 
-        println!("{:?}", post_req);
         post_req
     }
 
