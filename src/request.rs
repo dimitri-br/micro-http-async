@@ -46,7 +46,7 @@ impl Request {
     /// the request).
     ///
     /// It will then construct itself and return, ready to use.
-    pub  async fn new(request: String, user_addr: std::net::SocketAddr) -> Self {
+    pub async fn new(request: String, user_addr: std::net::SocketAddr) -> Self {
         let request = Request::split_to_row(request).await;
 
         let method = Request::get_method(&request).await;
@@ -77,11 +77,11 @@ impl Request {
         let u_strings: Vec<String> = string.split("\r\n").map(|x| x.to_string()).collect();
 
         let mut strings = Vec::<String>::new();
-        for string in u_strings{
-            if string.contains(";"){
+        for string in u_strings {
+            if string.contains(";") {
                 let mut sts: Vec<String> = string.split(";").map(|x| x.to_string()).collect();
                 strings.append(&mut sts);
-            }else{
+            } else {
                 strings.push(string.clone());
             }
         }
@@ -194,46 +194,47 @@ impl Request {
     async fn get_post_request(strings: &Vec<String>) -> HashMap<String, PostRequest> {
         //println!("{:?}", strings);
 
-        if !strings.contains(&"Content-Type: application/x-www-form-urlencoded".to_string()) && !strings.contains(&"Content-Type: multipart/form-data".to_string()){
+        if !strings.contains(&"Content-Type: application/x-www-form-urlencoded".to_string())
+            && !strings.contains(&"Content-Type: multipart/form-data".to_string())
+        {
             return HashMap::new();
         }
 
         let index_of_post = strings.iter().position(|x| x == "").unwrap();
 
         let mut post_req = HashMap::new();
-        
-        if strings.contains(&"Content-Type: application/x-www-form-urlencoded".to_string()){
+
+        if strings.contains(&"Content-Type: application/x-www-form-urlencoded".to_string()) {
             if strings.len() - 1 > index_of_post {
                 for n in 0..(strings.len() - 1) - index_of_post {
-    
                     let val = &strings[index_of_post + n + 1];
                     let args = val.split("&");
-                    for val in args{
+                    for val in args {
                         let mut split_val = val.split("=");
                         let p_var = split_val.next().unwrap();
                         let p_val = split_val.next().unwrap();
-                        let p_r = PostRequest::new(p_var.to_string(), "".to_string(), p_val.into()).await;
+                        let p_r =
+                            PostRequest::new(p_var.to_string(), "".to_string(), p_val.into()).await;
                         post_req.insert(p_var.to_string(), p_r);
                     }
                 }
             }
-        }else{
+        } else {
             if strings.len() - 1 > index_of_post {
                 let mut form_data = Vec::new();
 
-                
                 let mut should_append = false;
-                for value in strings.iter(){
-                    if value.contains("-----------------------------"){
+                for value in strings.iter() {
+                    if value.contains("-----------------------------") {
                         should_append = true;
                         continue;
                     }
 
-                    if value.contains("Content-"){
+                    if value.contains("Content-") {
                         continue;
                     }
 
-                    if should_append{
+                    if should_append {
                         form_data.push(value);
                     }
                 }
@@ -242,15 +243,15 @@ impl Request {
                 let mut filename = String::new();
                 let mut data = Vec::new();
 
-                for value in form_data.iter(){
-
+                for value in form_data.iter() {
                     // Is a name, so we get the name. We also check the last given data so we can write the old post data.
-                    if value.contains(" name="){
-                        if data.len() > 0 && !is_new_item{
-                            let p_r = PostRequest::new(name.clone(), filename.clone(), data.clone()).await;
+                    if value.contains(" name=") {
+                        if data.len() > 0 && !is_new_item {
+                            let p_r =
+                                PostRequest::new(name.clone(), filename.clone(), data.clone())
+                                    .await;
                             data.clear();
                             post_req.insert(name.clone(), p_r);
-
                         }
 
                         let mut split_name = value.split(" name=");
@@ -263,7 +264,7 @@ impl Request {
                     }
 
                     // Is a file, so we get the filename
-                    if value.contains(" filename="){
+                    if value.contains(" filename=") {
                         let mut split_name = value.split(" filename=");
                         split_name.next();
                         filename = split_name.next().unwrap().to_string();
@@ -278,7 +279,7 @@ impl Request {
                 }
 
                 // We make sure the last bit of form data is saved
-                if data.len() > 0 && !is_new_item{
+                if data.len() > 0 && !is_new_item {
                     let p_r = PostRequest::new(name.clone(), filename.clone(), data.clone()).await;
                     data.clear();
                     post_req.insert(name.clone(), p_r);
@@ -317,22 +318,22 @@ impl Request {
 ///
 /// A representation of a post request
 #[derive(Debug)]
-pub struct PostRequest{
+pub struct PostRequest {
     pub name: String,
     pub file_name: String,
-    pub data: Vec<u8>
+    pub data: Vec<u8>,
 }
 
-impl PostRequest{
-    pub async fn new(name: String, file_name: String, data: Vec<u8>) -> Self{
-        Self{
+impl PostRequest {
+    pub async fn new(name: String, file_name: String, data: Vec<u8>) -> Self {
+        Self {
             name,
             file_name,
-            data
+            data,
         }
     }
 
-    pub async fn get_data<T: std::convert::From<std::vec::Vec<u8>>>(&self) -> T{
+    pub async fn get_data<T: std::convert::From<std::vec::Vec<u8>>>(&self) -> T {
         self.data.clone().into()
     }
 }
