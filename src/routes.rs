@@ -114,7 +114,7 @@ impl Routes {
         request: String,
         user_addr: std::net::SocketAddr,
     ) -> Result<DataType, &str> {
-        let request = Request::new(request, user_addr);
+        let request = Request::new(request, user_addr).await;
 
         // Handle static files - check if theyre binary or text, and handle appropriately.
         // Probably not the best method but it *works*

@@ -20,12 +20,12 @@ impl Connection {
     ///
     /// Read the `TcpStream` to a `String`
     pub async fn read_to_string(&self) -> String {
-        let mut string = String::from_utf8(
+        let mut string = unsafe { String::from_utf8_unchecked(
             self.read_to_vec()
                 .await
                 .expect("Error reading vec from stream"),
-        )
-        .expect("Error decoding stream to utf-8");
+        ) };
+        //.expect("Error decoding stream to utf-8");
         trim_newline(&mut string);
 
         string

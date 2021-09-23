@@ -127,6 +127,7 @@
 #![doc(test(no_crate_inject))]
 // This is a workaround while we wait for the feature to become stable
 #![feature(write_all_vectored)]
+#![feature(string_remove_matches)]
 
 mod connection;
 mod html_loader;

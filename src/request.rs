@@ -33,7 +33,7 @@ pub struct Request {
     pub user_agent: String,
     pub user_addr: std::net::SocketAddr,
     pub get_request: HashMap<String, String>,
-    pub post_request: HashMap<String, String>,
+    pub post_request: HashMap<String, PostRequest>,
     pub raw_request: Vec<String>,
 }
 
@@ -46,18 +46,18 @@ impl Request {
     /// the request).
     ///
     /// It will then construct itself and return, ready to use.
-    pub fn new(request: String, user_addr: std::net::SocketAddr) -> Self {
-        let request = Request::split_to_row(request);
+    pub  async fn new(request: String, user_addr: std::net::SocketAddr) -> Self {
+        let request = Request::split_to_row(request).await;
 
-        let method = Request::get_method(&request);
+        let method = Request::get_method(&request).await;
 
-        let uri = Request::get_uri(&request);
+        let uri = Request::get_uri(&request).await;
 
-        let user_agent = Request::get_user_agent(&request);
+        let user_agent = Request::get_user_agent(&request).await;
 
-        let (get_request, uri) = Request::get_vars(&uri);
+        let (get_request, uri) = Request::get_vars(&uri).await;
 
-        let post_request = Request::get_post_request(&request);
+        let post_request = Request::get_post_request(&request).await;
 
         Self {
             method,
@@ -73,16 +73,25 @@ impl Request {
     /// # Split To Row
     ///
     /// This function splits a string into rows for every new line
-    fn split_to_row(string: String) -> Vec<String> {
-        let strings: Vec<String> = string.split("\r\n").map(|x| x.to_string()).collect();
+    async fn split_to_row(string: String) -> Vec<String> {
+        let u_strings: Vec<String> = string.split("\r\n").map(|x| x.to_string()).collect();
 
+        let mut strings = Vec::<String>::new();
+        for string in u_strings{
+            if string.contains(";"){
+                let mut sts: Vec<String> = string.split(";").map(|x| x.to_string()).collect();
+                strings.append(&mut sts);
+            }else{
+                strings.push(string.clone());
+            }
+        }
         strings
     }
 
     /// # Get Method
     ///
     /// This function gets the method from a http request (Eg, POST)
-    fn get_method(strings: &Vec<String>) -> Option<HttpMethod> {
+    async fn get_method(strings: &Vec<String>) -> Option<HttpMethod> {
         let mut method: Option<HttpMethod> = None;
         for string in strings.iter() {
             for substring in string.split(" ") {
@@ -135,7 +144,7 @@ impl Request {
     /// This funcion gets the URI of the request
     ///
     /// The URI is the requested route (eg, /about)
-    fn get_uri(strings: &Vec<String>) -> String {
+    async fn get_uri(strings: &Vec<String>) -> String {
         let string = &strings[0];
 
         let strings: Vec<String> = string.split(" ").map(|x| x.to_string()).collect();
@@ -154,7 +163,7 @@ impl Request {
     /// This function takes in a URI and extracts the GET parameters, returning them as a hashmap
     ///
     /// This can then be used by the callback
-    fn get_vars(uri: &String) -> (HashMap<String, String>, String) {
+    async fn get_vars(uri: &String) -> (HashMap<String, String>, String) {
         let split_uri: Vec<String> = uri.split("?").map(|x| x.to_string()).collect();
 
         let mut hash_vals = HashMap::<String, String>::new();
@@ -182,21 +191,103 @@ impl Request {
     ///
     /// This currently only works for the standard `application/x-www-form-urlencoded` form type,
     /// and doesn't support `multipart/form-data` yet.
-    fn get_post_request(strings: &Vec<String>) -> HashMap<String, String> {
+    async fn get_post_request(strings: &Vec<String>) -> HashMap<String, PostRequest> {
+        //println!("{:?}", strings);
+
+        if !strings.contains(&"Content-Type: application/x-www-form-urlencoded".to_string()) && !strings.contains(&"Content-Type: multipart/form-data".to_string()){
+            println!("{:?}", strings);
+            return HashMap::new();
+        }
+
         let index_of_post = strings.iter().position(|x| x == "").unwrap();
 
         let mut post_req = HashMap::new();
-        if strings.len() - 1 > index_of_post {
-            for n in 0..(strings.len() - 1) - index_of_post {
-                let val = &strings[index_of_post + n + 1];
-                let mut split_val = val.split("=");
-                let p_var = split_val.next().unwrap();
-                let p_val = split_val.next().unwrap();
+        
+        if strings.contains(&"Content-Type: application/x-www-form-urlencoded".to_string()){
+            if strings.len() - 1 > index_of_post {
+                for n in 0..(strings.len() - 1) - index_of_post {
+    
+                    let val = &strings[index_of_post + n + 1];
+                    let args = val.split("&");
+                    for val in args{
+                        let mut split_val = val.split("=");
+                        let p_var = split_val.next().unwrap();
+                        let p_val = split_val.next().unwrap();
+                        let p_r = PostRequest::new(p_var.to_string(), "".to_string(), p_val.into()).await;
+                        post_req.insert(p_var.to_string(), p_r);
+                    }
+                }
+            }
+        }else{
+            if strings.len() - 1 > index_of_post {
+                let mut form_data = Vec::new();
 
-                post_req.insert(p_var.to_string(), p_val.to_string());
+                
+                let mut should_append = false;
+                for value in strings.iter(){
+                    if value.contains("-----------------------------"){
+                        should_append = true;
+                        continue;
+                    }
+
+                    if value.contains("Content-"){
+                        continue;
+                    }
+
+                    if should_append{
+                        form_data.push(value);
+                    }
+                }
+                let mut is_new_item = false;
+                let mut name = String::new();
+                let mut filename = String::new();
+                let mut data = Vec::new();
+
+                for value in form_data.iter(){
+
+                    // Is a name, so we get the name. We also check the last given data so we can write the old post data.
+                    if value.contains(" name="){
+                        if data.len() > 0 && !is_new_item{
+                            let p_r = PostRequest::new(name.clone(), filename.clone(), data.clone()).await;
+                            data.clear();
+                            post_req.insert(name.clone(), p_r);
+
+                        }
+
+                        let mut split_name = value.split(" name=");
+                        split_name.next();
+                        name = split_name.next().unwrap().to_string();
+                        name.remove_matches("\"");
+
+                        is_new_item = true;
+                        continue;
+                    }
+
+                    // Is a file, so we get the filename
+                    if value.contains(" filename="){
+                        let mut split_name = value.split(" filename=");
+                        split_name.next();
+                        filename = split_name.next().unwrap().to_string();
+                        filename.remove_matches("\"");
+
+                        continue;
+                    }
+
+                    // is data
+                    is_new_item = false;
+                    data.append(&mut value.clone().as_bytes().to_vec());
+                }
+
+                // We make sure the last bit of form data is saved
+                if data.len() > 0 && !is_new_item{
+                    let p_r = PostRequest::new(name.clone(), filename.clone(), data.clone()).await;
+                    data.clear();
+                    post_req.insert(name.clone(), p_r);
+                }
             }
         }
 
+        println!("{:?}", post_req);
         post_req
     }
 
@@ -205,7 +296,7 @@ impl Request {
     /// This function gets the user agent from the request
     ///
     /// Can be useful when doing dynamic page downloads (eg, specific downloads for macos or android)
-    fn get_user_agent(strings: &Vec<String>) -> String {
+    async fn get_user_agent(strings: &Vec<String>) -> String {
         let mut agent = "none".to_string();
         for string in strings.iter() {
             if string.contains("User-Agent:") {
@@ -221,5 +312,29 @@ impl Request {
         }
 
         agent
+    }
+}
+
+/// # Post Request
+///
+/// A representation of a post request
+#[derive(Debug)]
+pub struct PostRequest{
+    pub name: String,
+    pub file_name: String,
+    pub data: Vec<u8>
+}
+
+impl PostRequest{
+    pub async fn new(name: String, file_name: String, data: Vec<u8>) -> Self{
+        Self{
+            name,
+            file_name,
+            data
+        }
+    }
+
+    pub async fn get_data<T: std::convert::From<std::vec::Vec<u8>>>(&self) -> T{
+        self.data.clone().into()
     }
 }

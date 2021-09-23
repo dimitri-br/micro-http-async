@@ -89,7 +89,7 @@ impl HtmlConstructor {
                 format!("HTTP/1.1 {} {}\r\n\r\n", 404, "NOT FOUND")
             }
             Response::ServerErr => {
-                format!("HTTP/1.1 {} {}\r\n\r\n", 500, "INTERNEL SERVER ERROR")
+                format!("HTTP/1.1 {} {}\r\n\r\n", 500, "INTERNAL SERVER ERROR")
             }
         };
         let file = format!("{}{}", header_code, file);
