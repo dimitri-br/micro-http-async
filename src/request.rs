@@ -46,7 +46,7 @@ impl Request {
     /// the request).
     ///
     /// It will then construct itself and return, ready to use.
-    pub async fn new(request: String, user_addr: std::net::SocketAddr) -> Self {
+    pub async fn new(request: String, user_addr: std::net::SocketAddr) -> Result<Self, &'static str> {
         let request = Request::split_to_row(request).await;
 
         let method = Request::get_method(&request).await;
@@ -59,7 +59,7 @@ impl Request {
 
         let post_request = Request::get_post_request(&request).await;
 
-        Self {
+        Ok(Self {
             method,
             uri,
             user_agent,
@@ -67,7 +67,7 @@ impl Request {
             get_request,
             post_request,
             raw_request: request,
-        }
+        })
     }
 
     /// # Split To Row

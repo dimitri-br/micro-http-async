@@ -109,12 +109,14 @@ impl Routes {
     ///
     /// If this function detects a request for static content - which it can only detect if the data is stored in
     /// `/static/`, then it will return early with the static content, and not run any functions.
+    ///
+    /// If an error handler is not set, and a route is not found, a panic will occur.
     pub async fn get_route(
         &self,
         request: String,
         user_addr: std::net::SocketAddr,
     ) -> Result<DataType, &str> {
-        let request = Request::new(request, user_addr).await;
+        let request = Request::new(request, user_addr).await.unwrap();
 
         // Handle static files - check if theyre binary or text, and handle appropriately.
         // Probably not the best method but it *works*

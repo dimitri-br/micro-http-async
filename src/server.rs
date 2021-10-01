@@ -40,7 +40,7 @@ impl HttpServer {
     /// Listen for new connections.
     ///
     /// Run `handle_connection` upon connection.
-    pub async fn listen(&mut self) {
+    pub async fn listen(&mut self) -> Result<(), &'static str> {
         loop {
             let (socket, addr) = self.listener.accept().await.unwrap(); // Accept an incoming connection
             self.handle_connection(socket, addr).await.unwrap(); // Handle it
@@ -65,7 +65,7 @@ impl HttpServer {
     ) -> Result<(), &str> {
         let mut connection = Connection::new(stream); // Create our connection handler
 
-        let request_str = connection.read_to_string().await; // get a string value from the recieved data
+        let request_str = connection.read_to_string().await.unwrap(); // get a string value from the recieved data
 
         // only needs the request and address as it constructs a `Request` to get the route and more info
         let ret_str = self.routes.get_route(request_str, addr).await.unwrap();

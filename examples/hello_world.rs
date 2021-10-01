@@ -151,5 +151,5 @@ pub async fn main() {
         .add_route("/json".to_string(), create_route!(json_response_handler))
         .await;
 
-    http_server.listen().await;
+    http_server.listen().await.unwrap();
 }
