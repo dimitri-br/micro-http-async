@@ -16,6 +16,9 @@ use crate::Routes;
 pub struct HttpServer {
     listener: TcpListener,
     pub routes: Routes,
+
+    /* Hidden parameters */
+    read_buffer_size: usize,
 }
 
 impl HttpServer {
@@ -29,9 +32,11 @@ impl HttpServer {
     /// ```
     pub async fn new(ip: &str, port: &str) -> io::Result<Self> {
         let address = format!("{}:{}", ip, port);
+        println!("Listening on {}", address);
         Ok(Self {
             listener: TcpListener::bind(&address).await?,
             routes: Routes::new().await,
+            read_buffer_size: 8192,
         })
     }
 
@@ -63,7 +68,7 @@ impl HttpServer {
         stream: TcpStream,
         addr: std::net::SocketAddr,
     ) -> Result<(), &str> {
-        let mut connection = Connection::new(stream); // Create our connection handler
+        let mut connection = Connection::new(stream, self.read_buffer_size); // Create our connection handler
 
         let request_str = connection.read_to_string().await.unwrap(); // get a string value from the recieved data
 
@@ -80,5 +85,14 @@ impl HttpServer {
         }
 
         Ok(()) // Return the future
+    }
+
+    /// # Set Read Buffer Size
+    /// 
+    /// Set the read buffer size for the server. The default value is 8192 bytes.
+    pub async fn set_read_buffer_size(&mut self, size: usize) -> Result<(), &'static str> {
+        self.read_buffer_size = size;
+        
+        Ok(())
     }
 }

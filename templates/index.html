@@ -48,7 +48,8 @@
             <div class="container">
                 <h1>Server is up and running!</h1>
                 <p class="lead">Everything is good to go! Check the footer for information to get you up and running, and test that error handling works with the link just below</p>
-                <p class="lead">Here is a dynamically generated string that will tell you what method you've just used: [ test_var ]</p>
+                <p class="lead">Here is a dynamically generated string that will tell you what method you've just used: [ test_var ]</p> 
+                <!-- Values between [] are dynamic, and should be set by the server -->
                 <p class="lead">[ name ]</p>
                 <p class="lead">
                   <a href="/err" class="w-100 btn btn-lg btn-outline-primary">Test error handling</a>
@@ -75,7 +76,7 @@
                   <h3 class="my-0 fw-normal">Test POST parameters:</h3>
               </div>
               <div class="card-body">
-                  <form method="POST"> <!-- enctype="multipart/form-data"> -->
+                  <form method="POST" enctype="multipart/form-data">
                       <div class="mb-3">
                           <label for="name" class="form-label">Enter something to POST to the server:</label>
                           <input type="text" class="form-control" id="name" name="name" aria-describedby="text">

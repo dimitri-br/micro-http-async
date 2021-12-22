@@ -36,6 +36,7 @@ async fn main_handler(request: Request) -> Result<String, String> {
     let mut vars = Vars::new();
 
     let test_string: String;
+
     // Shows how to compare the various methods to create interactive sites
     if request.method.unwrap() == HttpMethod::Get {
         test_string = "You used a GET request!".to_string();
@@ -44,10 +45,13 @@ async fn main_handler(request: Request) -> Result<String, String> {
             "You used a POST request, {}",
             String::from_utf8(request.post_request.get("name").unwrap().get_data().await).unwrap()
         );
+        // Here, we get the file based on its name. We then write it to a file
+        // using the form file name as the file name.
         let test_file = request.post_request.get("file1").unwrap();
         std::fs::write(&test_file.file_name, test_file.get_data::<Vec<u8>>().await).unwrap();
     }
 
+    // Here we show how to use dynamic variables to create dynamic pages
     vars.insert("test_var".to_string(), Variable::String(test_string));
 
     // This part will check we have a get request parameter with "name"
@@ -70,7 +74,7 @@ async fn main_handler(request: Request) -> Result<String, String> {
     let page =
         HtmlConstructor::construct_page(Response::from(200), "./templates/index.html", vars).await;
 
-    // Return the page as a Result
+    // Return the page as a Result. 
     Ok(page)
 }
 
@@ -90,6 +94,8 @@ async fn error_handler(request: Request) -> Result<String, String> {
         "Could not load webpage at <code>127.0.0.1:8080{}</code>",
         request.uri
     );
+
+    // We want to use a dynamic variable here to show the user what went wrong
     vars.insert("uri".to_string(), Variable::String(test_string));
 
     let page =
@@ -120,7 +126,8 @@ async fn json_response_handler(request: Request) -> Result<String, String> {
         name: "Hello, world!".into()
     });
 
-    // This differs from the HTMLConstructor, as we don't take vars as an input
+    // This differs from the HTMLConstructor, as we don't take vars as an input. Instead,
+    // we use JSON constructor to build a JSON compatible response using the result from the serde_json library.
     let page = JSONResponse::construct_response(Response::Ok, json.to_string()).await;
     Ok(page)
 }
@@ -135,6 +142,8 @@ pub async fn main() {
     let mut http_server = HttpServer::new("127.0.0.1", "8080")
         .await
         .expect("Error binding to IP/Port");
+
+    http_server.set_read_buffer_size(10_000).await.unwrap(); // Set to 10kb. This allows us to read larger files, for example.
 
     // must be placed on heap so it can be allocated at runtime (alternative is static)
 

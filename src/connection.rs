@@ -6,14 +6,20 @@ use tokio::net::TcpStream;
 ///
 /// This struct is a helpful struct to handle the nitty gritty of
 /// connections, such as reading and writing to the stream
-pub struct Connection(TcpStream);
+pub struct Connection{
+    stream: TcpStream,
+    read_buffer_size: usize,
+}
 
 impl Connection {
     /// # New
     ///
     /// Create a new connection handler from a `TcpStream`
-    pub fn new(stream: TcpStream) -> Self {
-        Connection(stream)
+    pub fn new(stream: TcpStream, read_buffer_size: usize) -> Self {
+        Connection{
+            stream,
+            read_buffer_size,
+        }
     }
 
     /// # Read To String
@@ -37,9 +43,9 @@ impl Connection {
     ///
     /// Read the `TcpStream` to a `Vec<u8>`. Returns a `Result` as we cannot guarantee a successful read.
     pub async fn read_to_vec(&self) -> Result<Vec<u8>, Box<dyn Error>> {
-        let mut buffer = [0; 2048]; // Create our buffer
+        let mut buffer = Vec::with_capacity(self.read_buffer_size);
 
-        let stream: &TcpStream = &self.0; // Get a reference to the stream
+        let stream: &TcpStream = &self.stream; // Get a reference to the stream
 
         // We loop while we're waiting for a read
         loop {
@@ -47,7 +53,7 @@ impl Connection {
 
             // Try to read data, this may still fail with `WouldBlock`
             // if the readiness event is a false positive.
-            match stream.try_read(&mut buffer) {
+            match stream.try_read_buf(&mut buffer) {
                 Ok(0) => break, // No data recieved
                 Ok(_) => {
                     break; // we recieved some data, just break the loop and return it
@@ -61,7 +67,6 @@ impl Connection {
             }
         }
         let buffer: Vec<u8> = buffer
-            .to_vec()
             .iter()
             .filter(|x| **x != 0x0u8)
             .map(|x| *x)
@@ -73,7 +78,7 @@ impl Connection {
     ///
     /// Write a `String` value to the `TcpStream`. Returns a `Result` as we cannot guarantee a successful write.
     pub async fn write_string(&mut self, data: String) -> Result<(), Box<dyn Error>> {
-        let stream: &mut TcpStream = &mut self.0; // Get a reference to the stream
+        let stream: &mut TcpStream = &mut self.stream; // Get a reference to the stream
 
         loop {
             // Wait for the socket to be writable
@@ -103,7 +108,7 @@ impl Connection {
     ///
     /// Write bytes to the TCP stream, useful for sending data for things such as images or downloadable binary files
     pub async fn write_bytes(&mut self, data: Vec<u8>) -> Result<(), Box<dyn Error>> {
-        let stream: &mut TcpStream = &mut self.0; // Get a reference to the stream
+        let stream: &mut TcpStream = &mut self.stream; // Get a reference to the stream
 
         loop {
             // Wait for the socket to be writable

@@ -1,5 +1,8 @@
 use std::collections::HashMap;
 
+use regex::Regex;
+
+
 /// # Http Methods
 ///
 /// An enum with the types of method that a user can request
@@ -28,12 +31,30 @@ pub enum HttpMethod {
 /// raw unmodified request
 #[derive(Debug)]
 pub struct Request {
+    /// Method stores the method used to
+    /// make the request
     pub method: Option<HttpMethod>,
+    /// URI contains the URI of the request
     pub uri: String,
+    /// User Agent stores the user agent of the user
     pub user_agent: String,
+    /// User Addr stores the users IP address
     pub user_addr: std::net::SocketAddr,
+    /// Get Request stores the data of the get request.
+    /// 
+    /// It is a `HashMap<String, String>`
+    /// 
+    /// The key of the hashmap is equal to the name of the
+    /// form field name.
     pub get_request: HashMap<String, String>,
+    /// Post Request stores the data of the post request.
+    /// 
+    /// It is a `HashMap<String, PostRequest>`
+    /// 
+    /// The key of the hashmap is equal to the name of the
+    /// form field name.
     pub post_request: HashMap<String, PostRequest>,
+    /// Raw Request stores the raw request without any modifications.
     pub raw_request: Vec<String>,
 }
 
@@ -220,75 +241,101 @@ impl Request {
                 }
             }
         } else {
-            if strings.len() - 1 > index_of_post {
-                let mut form_data = Vec::new();
+            // It is multipart, so extract the data from it and store it in post_req
 
-                let mut should_append = false;
-                for value in strings.iter() {
-                    if value.contains("-----------------------------") {
-                        should_append = true;
-                        continue;
+            let mut boundary = String::new();
+            
+            let mut name = String::new();
+
+            let mut filename = String::new();
+
+            let mut data = Vec::<u8>::new();
+
+            
+
+            for string in strings[index_of_post + 1..].iter() {
+                // Check for the boundaries
+                if string.contains("-----------------------------") {
+                    // Now, we need to extract the boundary hash with regex, eg boundary=---------------------------179249680738152359603687021860
+                    // becomes 179249680738152359603687021860
+                    let re = Regex::new(r"\w*?([\d|\.]+)\w*?([\d{1,4}]+).*").unwrap();
+                    let re_boundary = match re.find(string){
+                        Some(v) => {v.as_str().to_string()},
+                        None => {panic!("Error - multipart form data is invalid!")}
+                    };         
+                    if re_boundary == boundary{
+
+                        // Create a post request based on the data
+                        data.remove(0); // The first item in the data is literally empty bytes, we don't need it.
+                        let p_r = PostRequest::new(name.clone(), filename.clone(), data.clone()).await;
+                        post_req.insert(name.clone(), p_r);
+                        
+                        // We've reached the end of the form data, so reset the data
+                        name.clear();
+                        filename.clear();
+                        data.clear();
                     }
-
-                    if value.contains("Content-") {
-                        continue;
-                    }
-
-                    if should_append {
-                        form_data.push(value);
-                    }
-                }
-                let mut is_new_item = false;
-                let mut name = String::new();
-                let mut filename = String::new();
-                let mut data = Vec::new();
-
-                for value in form_data.iter() {
-                    // Is a name, so we get the name. We also check the last given data so we can write the old post data.
-                    if value.contains(" name=") {
-                        if data.len() > 0 && !is_new_item {
-                            let p_r =
-                                PostRequest::new(name.clone(), filename.clone(), data.clone())
-                                    .await;
-                            data.clear();
-                            post_req.insert(name.clone(), p_r);
-                        }
-
-                        let mut split_name = value.split(" name=");
-                        split_name.next();
-                        name = split_name.next().unwrap().to_string();
-                        name.remove_matches("\"");
-
-                        is_new_item = true;
-                        continue;
-                    }
-
-                    // Is a file, so we get the filename
-                    if value.contains(" filename=") {
-                        let mut split_name = value.split(" filename=");
-                        split_name.next();
-                        filename = split_name.next().unwrap().to_string();
-                        filename.remove_matches("\"");
-
-                        continue;
-                    }
-
-                    // is data
-                    is_new_item = false;
-                    data.append(&mut value.clone().as_bytes().to_vec());
+                    boundary = re_boundary;
+                    
+                    continue;
                 }
 
-                // We make sure the last bit of form data is saved
-                if data.len() > 0 && !is_new_item {
-                    let p_r = PostRequest::new(name.clone(), filename.clone(), data.clone()).await;
-                    data.clear();
-                    post_req.insert(name.clone(), p_r);
+                if !boundary.is_empty(){
+                    // We're in the middle of the form data, so here we extract the data
+                    
+                    // Check for content disposition. Skip if we match
+                    if string.contains("Content-Disposition: form-data"){
+                        continue;
+                    }
+
+                    // Check if there is a filename
+                    if string.contains("filename="){
+                        let re = Regex::new(r#""([^"].+)""#).unwrap();
+                        let re_filename = match re.find(string){
+                            Some(v) => {v.as_str().to_string()},
+                            None => {panic!("Error - multipart form data is invalid!")}
+                        };
+                        // Remove quotes
+                        let re_filename = re_filename.replace("\"", "");
+                        filename = re_filename;
+
+                        continue;
+                    }
+
+                    // Check for the name
+                    if string.contains("name="){
+                        let re = Regex::new(r#""([^"].+)""#).unwrap();
+                        let re_name = match re.find(string){
+                            Some(v) => {v.as_str().to_string()},
+                            None => {panic!("Error - multipart form data is invalid!")}
+                        };
+                        // Remove quotes
+                        let re_name = re_name.replace("\"", "");
+                        name = re_name;
+
+                        continue;
+                    }
+
+                    // Check for content type. If we match, just skip
+                    if string.contains("Content-Type:"){
+                        continue;
+                    }
+
+                    // If we've finished, then we can add the data to the hashmap
+                    data.extend((format!("{}\n", string)).as_bytes());
                 }
             }
+
+            // Save the last value in the hashmap, as we've reached the end of the form data. 
+            data.remove(0); // The first item in the data is literally empty bytes, we don't need it.
+            data.remove(data.len() - 1); // We also remove the last value as it's garbage (TODO: FIX THIS)
+            let p_r = PostRequest::new(name.clone(), filename.clone(), data.clone()).await;
+            post_req.insert(name.clone(), p_r);
         }
 
         post_req
     }
+    
 
     /// # Get user agent
     ///
