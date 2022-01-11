@@ -52,7 +52,14 @@ async fn main_handler(request: Request) -> Result<String, String> {
     }
 
     // Here we show how to use dynamic variables to create dynamic pages
-    vars.insert("test_var".to_string(), Variable::String(test_string));
+    vars.insert("method".to_string(), Variable::String(test_string));
+    vars.insert("secure_connection".to_string(), Variable::String(
+        if request.secure {
+            "Your connection is secure!".to_string()
+        } else {
+            "Your connection is unsecure :(".to_string()
+        },
+    ));
 
     // This part will check we have a get request parameter with "name"
     // If we do, we will set a dynamic variable to the key value.
@@ -139,9 +146,18 @@ async fn json_response_handler(request: Request) -> Result<String, String> {
 /// then listens for incoming connections
 #[tokio::main]
 pub async fn main() {
-    let mut http_server = HttpServer::new("127.0.0.1", "8080")
+    let use_tls = true;
+
+    let mut http_server = if use_tls {
+        HttpServer::new_tls("127.0.0.1", "443", "./ssl/cert.pem".into(), "./ssl/server.key".into())
         .await
-        .expect("Error binding to IP/Port");
+        .expect("Error binding to IP/Port")
+    }else{
+        HttpServer::new("127.0.0.1", "80")
+        .await
+        .expect("Error binding to IP/Port")
+    };
+
 
     http_server.set_read_buffer_size(10_000).await.unwrap(); // Set to 10kb. This allows us to read larger files, for example.
 

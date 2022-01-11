@@ -54,6 +54,19 @@ impl HttpServer {
         })
     }
 
+
+    /// # New TLS
+    /// 
+    /// Create a new server, with a given IP and port, and a TLS certificate and key
+    /// 
+    /// **Example**
+    /// ```
+    /// let http_server = HttpServer::new_tls("127.0.0.1", "8080", "cert.pem", "key.pem").await.unwrap();
+    /// ```
+    /// 
+    /// # Note
+    /// 
+    /// The certificate and key files must be in PEM format. The key must not be encrypted.
     pub async fn new_tls(ip: &str, port: &str, cert_path: PathBuf, key_path: PathBuf) -> io::Result<Self> {
         let address = format!("{}:{}", ip, port);
         println!("Listening on {}", address);
@@ -81,6 +94,12 @@ impl HttpServer {
     /// Listen for new connections.
     ///
     /// Run `handle_connection` upon connection.
+    /// 
+    /// # Note
+    /// 
+    /// If you are using TLS, this function will not return until the server is shut down.
+    /// 
+    /// All errors will be printed to the console, instead of panicking.
     pub async fn listen(&mut self) -> Result<(), &'static str> {
         loop {
             let (socket, addr) = self.listener.accept().await.unwrap(); // Accept an incoming connection
@@ -89,8 +108,13 @@ impl HttpServer {
 
             // Check if we need to use TLS
             if let Some(ref tls_acceptor) = acceptor {
-                let tls_socket = tls_acceptor.accept(socket).await.unwrap();
-                self.handle_connection_tls(tls_socket, addr).await.unwrap();
+                let tls_socket = tls_acceptor.accept(socket).await;
+                if let Ok(tls_socket) = tls_socket {
+                    self.handle_connection_tls(tls_socket, addr).await.unwrap();
+                }else{
+                    // Safely output the error without panicking
+                    eprintln!("Error occurred while accepting TLS connection: {:?}", tls_socket);
+                }
             }else{
                 self.handle_connection(socket, addr).await.unwrap(); // Handle it
             }
@@ -118,7 +142,7 @@ impl HttpServer {
         let request_str = connection.read_to_string().await.unwrap(); // get a string value from the recieved data
 
         // only needs the request and address as it constructs a `Request` to get the route and more info
-        let ret_str = self.routes.get_route(request_str, addr).await.unwrap();
+        let ret_str = self.routes.get_route(request_str, addr, false).await.unwrap();
 
         match ret_str {
             crate::DataType::Text(text) => {
@@ -132,6 +156,15 @@ impl HttpServer {
         Ok(()) // Return the future
     }
 
+    /// # Handle Connection TLS
+    /// 
+    /// This function takes a `TlsStream`, and runs all the necessary functions to read the request,
+    /// handle the response and write it back to the user.
+    /// 
+    /// This function should only be called by the `HttpServer`, as it should only be run upon accepting
+    /// a new connection.
+    /// 
+    /// Read [handle_connection](#method.handle_connection) for more information.    
     async fn handle_connection_tls(
         &mut self,
         stream: TlsStream<TcpStream>,
@@ -142,7 +175,7 @@ impl HttpServer {
         let request_str = connection.read_to_string().await.unwrap(); // get a string value from the recieved data
 
         // only needs the request and address as it constructs a `Request` to get the route and more info
-        let ret_str = self.routes.get_route(request_str, addr).await.unwrap();
+        let ret_str = self.routes.get_route(request_str, addr,true).await.unwrap();
 
         match ret_str {
             crate::DataType::Text(text) => {

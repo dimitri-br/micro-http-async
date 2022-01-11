@@ -56,6 +56,8 @@ pub struct Request {
     pub post_request: HashMap<String, PostRequest>,
     /// Raw Request stores the raw request without any modifications.
     pub raw_request: Vec<String>,
+    /// Did the request come from a secure connection?
+    pub secure: bool,
 }
 
 impl Request {
@@ -67,7 +69,7 @@ impl Request {
     /// the request).
     ///
     /// It will then construct itself and return, ready to use.
-    pub async fn new(request: String, user_addr: std::net::SocketAddr) -> Result<Self, &'static str> {
+    pub async fn new(request: String, user_addr: std::net::SocketAddr, is_secure: bool) -> Result<Self, &'static str> {
         let request = Request::split_to_row(request).await;
 
         let method = Request::get_method(&request).await;
@@ -88,6 +90,7 @@ impl Request {
             get_request,
             post_request,
             raw_request: request,
+            secure: is_secure,
         })
     }
 
