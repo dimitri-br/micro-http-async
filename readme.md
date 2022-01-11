@@ -25,11 +25,8 @@ Please note this is probably not the final API
 This crate aims only to simplify web api or lightweight web creation - not intended to run full scale web apps like chatrooms
 or other high intensity applications. It implements a simple asynchronous routing system (Made using hash maps for speed and efficiency)
 as well as asynchronous file loading and more.
-The demo above uses 0% CPU under no load, and less than 10mb of memory under usage.
-It compiles in 1m 34s on an i5 5500u (release) from scratch and sits at 700kb.
 
-Changelog v0.1.3:
-Post requests now work fully. Check templates and examples for examples on usage.
-hello_world.rs contains a functioning program that can read in post request data, save it to a file and so on. 
-The read buffer size for the server is now modifiable by the server. Check hello_world to see how it is used.
-A future aim is to add smaller, bite sized examples.
+It also supports TLS if security is a requirement through the [rustls](https://github.com/rustls/rustls) and [tokio-rustls](https://github.com/rustls/rustls) crates.
+
+Changelog v0.1.4:
+TLS support is now available. See the hello_world example for an example on usage.

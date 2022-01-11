@@ -34,6 +34,7 @@ where
 ///
 /// This struct will store a reference to a function or closure, and will run it automatically when a user visits the corresponding route defined to the function.
 pub struct Route {
+    /// The async callback function, boxed so that it can live on the heap
     function: Box<dyn RouteDef>,
 }
 
@@ -68,7 +69,9 @@ impl Route {
 /// you would want `Bytes(content)` instead of `Text(content)`. The API already handles
 /// this for you, but it is worth keeping in mind how it works behind the scenes
 pub enum DataType {
+    /// Defines a Text data type - this is for returning text, such as HTML
     Text(String),
+    /// Defines a Bytes data type - this is for returning binary data, such as images
     Bytes(Vec<u8>),
 }
 
@@ -78,6 +81,7 @@ pub enum DataType {
 ///
 /// `HashMap<Route, Content>` where content is the return content (ie, html or json).
 pub struct Routes {
+    /// The hashmap of routes. This stores the route (ie, `/`) and the content (a valid Route, which holds the callback function)
     routes: HashMap<String, Route>,
 }
 

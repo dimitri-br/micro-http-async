@@ -66,7 +66,7 @@ impl HttpServer {
     /// 
     /// # Note
     /// 
-    /// The certificate and key files must be in PEM format. The key must not be encrypted.
+    /// The certificate and key files must be in PEM and KEY formats respectively. The key must not be encrypted.
     pub async fn new_tls(ip: &str, port: &str, cert_path: PathBuf, key_path: PathBuf) -> io::Result<Self> {
         let address = format!("{}:{}", ip, port);
         println!("Listening on {}", address);

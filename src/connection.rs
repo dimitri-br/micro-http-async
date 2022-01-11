@@ -65,10 +65,11 @@ impl Connection {
     /// # Read To Vec
     ///
     /// Read the `TcpStream` to a `Vec<u8>`. Returns a `Result` as we cannot guarantee a successful read.
-    pub async fn read_to_vec(&mut self) -> Result<Vec<u8>, Box<dyn Error>> {
+    async fn read_to_vec(&mut self) -> Result<Vec<u8>, Box<dyn Error>> {
         let mut buffer = Vec::with_capacity(self.read_buffer_size);
 
-        
+        // We need to check if we are using TLS or not, as we need to read differently
+        // (TLS uses a different read function, and does not support try_read)
         match self.connection_type {
             ConnectionType::Plain(ref mut stream) => {
                 let stream = stream.as_mut().unwrap();
