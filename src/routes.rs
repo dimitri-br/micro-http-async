@@ -132,7 +132,7 @@ impl Routes {
                     let mut contents = vec![];
                     file_handle.read_to_end(&mut contents).await.unwrap();
 
-                    let result = String::from("HTTP/1.1 {}\r\nContent-type: image/jpeg;\r\nTransfer-Encoding: chunked\r\n\r\n");
+                    let result = String::from("HTTP/2 {}\r\nContent-type: image/jpeg;\r\nTransfer-Encoding: chunked\r\n\r\n");
                     let mut result = result.into_bytes();
 
                     // We split the data into chunks so we don't allocate a ton of data to the stack
@@ -153,7 +153,7 @@ impl Routes {
 
                     match String::from_utf8(result.clone()) {
                         Ok(_) => {
-                            let result = String::from("HTTP/1.1 {} {}\r\nContent-type: text/css;\r\nTransfer-Encoding: chunked\r\n\r\n");
+                            let result = String::from("HTTP/2 {} {}\r\nContent-type: text/css;\r\nTransfer-Encoding: chunked\r\n\r\n");
                             let mut result = result.into_bytes();
                             result.extend(&encoded);
                             let v = String::from_utf8(result).expect("This should work");
