@@ -80,16 +80,16 @@ impl HtmlConstructor {
         // This should be changed over to support all response types
         let header_code = match response_code {
             Response::Ok => {
-                format!("HTTP/2 {} {}\r\n\r\n", 200, "OK")
+                format!("HTTP/1.1 {} {}\r\n\r\n", 200, "OK")
             }
             Response::Redirect => {
-                format!("HTTP/2 {} {}\r\n\r\n", 301, "MOVED PERMANENTLY")
+                format!("HTTP/1.1 {} {}\r\n\r\n", 301, "MOVED PERMANENTLY")
             }
             Response::ClientErr => {
-                format!("HTTP/2 {} {}\r\n\r\n", 404, "NOT FOUND")
+                format!("HTTP/1.1 {} {}\r\n\r\n", 404, "NOT FOUND")
             }
             Response::ServerErr => {
-                format!("HTTP/2 {} {}\r\n\r\n", 500, "INTERNAL SERVER ERROR")
+                format!("HTTP/1.1 {} {}\r\n\r\n", 500, "INTERNAL SERVER ERROR")
             }
         };
         let file = format!("{}{}", header_code, file);
